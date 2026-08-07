@@ -122,10 +122,6 @@ namespace jshepler.ngu.mods
 
             // clearing the mod data before adding packs so the AP gained will get tracked properly
             ModSave.Data.Values.Clear();
-            TrackAPGained.Reset();
-            TrackBaseAdvPowerGained.Reset();
-            TrackCubeBoosts.Reset();
-            TrackPoopAndSeedsGained.Reset();
 
             // copy over purchased packs: the 5 newbie packs, the res3 pack, the portait pack, and ITOPOD pack(s)
             if (oldArbitrary.boughtNewbiePack)

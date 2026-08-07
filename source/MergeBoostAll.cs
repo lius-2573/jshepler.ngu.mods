@@ -9,7 +9,7 @@ namespace jshepler.ngu.mods
         [HarmonyPrefix, HarmonyPatch(typeof(Character), "Update")]
         private static bool Character_Update_prefix(Character __instance)
         {
-            if (__instance.InMenu(Menu.Inventory) == false)
+            if ((Menu)__instance.menuID != Menu.Inventory)
                 return true;
 
             if (Input.GetKeyDown(KeyCode.B) && Input.GetKey(KeyCode.LeftShift))

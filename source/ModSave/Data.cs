@@ -250,18 +250,6 @@ namespace jshepler.ngu.mods.ModSave
             set => Set("LastRebirthTime", value);
         }
 
-        internal static long[] ExpSourcesThisRB
-        {
-            get => Get("ExpSourcesThisRB", new long[TrackExpGained.SOURCE_COUNT]);
-            set => Set("ExpSourcesThisRB", value);
-        }
-
-        internal static long[] ExpSourcesLastRB
-        {
-            get => Get<long[]>("ExpSourcesLastRB", new long[TrackExpGained.SOURCE_COUNT]);
-            set => Set("ExpSourcesLastRB", value);
-        }
-
         internal static long[] PPSourcesThisRB
         {
             get => Get<long[]>("PPSourcesThisRB", [0L, 0L, 0L]);
@@ -274,52 +262,10 @@ namespace jshepler.ngu.mods.ModSave
             set => Set("PPSourcesLastRB", value);
         }
 
-        internal static long[] QPSourcesThisRB
-        {
-            get => Get("QPSourcesThisRB", new long[TrackQPGained.SOURCE_COUNT]);
-            set => Set("QPSourcesThisRB", value);
-        }
-
-        internal static long[] QPSourcesLastRB
-        {
-            get => Get("QPSourcesLastRB", new long[TrackQPGained.SOURCE_COUNT]);
-            set => Set("QPSourcesLastRB", value);
-        }
-
-        internal static long[] APSourcesThisRB
-        {
-            get => Get("APSourcesThisRB", new long[TrackAPGained.SOURCE_COUNT]);
-            set => Set("APSourcesThisRB", value);
-        }
-
-        internal static long[] APSourcesLastRB
-        {
-            get => Get("APSourcesLastRB", new long[TrackAPGained.SOURCE_COUNT]);
-            set => Set("APSourcesLastRB", value);
-        }
-
-        internal static int[] PoopSourcesThisRB
-        {
-            get => Get("PoopSourcesThisRB", new int[TrackPoopAndSeedsGained.POOP_SOURCE_COUNT]);
-            set => Set("PoopSourcesThisRB", value);
-        }
-
-        internal static int[] PoopSourcesLastRB
-        {
-            get => Get("PoopSourcesLastRB", new int[TrackPoopAndSeedsGained.POOP_SOURCE_COUNT]);
-            set => Set("PoopSourcesLastRB", value);
-        }
-
         internal static float BaseAdvPowerGained
         {
             get => Get("BaseAdvPowerGained", 0f);
             set => Set("BaseAdvPowerGained", value);
-        }
-
-        internal static float[] BaseAdvPowerGainSources
-        {
-            get => Get("BaseAdvPowerGainSources", new float[TrackBaseAdvPowerGained.Sources.COUNT]);
-            set => Set("BaseAdvPowerGainSources", value);
         }
 
         internal static bool Hardcore
@@ -440,13 +386,6 @@ namespace jshepler.ngu.mods.ModSave
         {
             get => Get("Move69Timer", 0f);
             set => Set("Move69Timer", value);
-        }
-
-        // [11 challenges][3 difficulties][max completions]
-        internal static int[][][] ChallengeCompletionTimes
-        {
-            get => Get("ChallengeCompletionTimes", ChallengeTimes.BaseChallenge.InitCompletionTimes());
-            set => Set("ChallengeCompletionTimes", value);
         }
 
         // REMINDER: NO TYPES DEFINED IN MODS ELSE NOT LOADABLE IN VANILLA

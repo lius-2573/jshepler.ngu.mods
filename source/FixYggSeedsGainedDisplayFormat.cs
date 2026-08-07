@@ -14,9 +14,11 @@ namespace jshepler.ngu.mods
         [HarmonyTranspiler, HarmonyPatch("harvest", typeof(int))]
         private static IEnumerable<CodeInstruction> harvest(IEnumerable<CodeInstruction> instructions)
         {
-            var newInstructions = new CodeMatcher(instructions)
-                .MatchForward(false, new CodeMatch(OpCodes.Ldstr, "You gained "))
-                .Advance(1)
+            var cm = new CodeMatcher(instructions);
+            cm.MatchForward(false, new CodeMatch(OpCodes.Ldstr, "You gained "));
+            if (cm.IsInvalid) return instructions;
+
+            return cm.Advance(1)
                 .InsertAndAdvance(
                     new CodeInstruction(OpCodes.Ldarg_0),
                     new CodeInstruction(OpCodes.Ldfld, _characterField))
@@ -24,16 +26,16 @@ namespace jshepler.ngu.mods
                 .RemoveInstruction()
                 .InsertAndAdvance(new CodeInstruction(OpCodes.Conv_R8), new CodeInstruction(OpCodes.Callvirt, _characterDisplay))
                 .InstructionEnumeration();
-
-            return newInstructions;
         }
 
         [HarmonyTranspiler, HarmonyPatch("consumeGoldFruit")]
         private static IEnumerable<CodeInstruction> consumeGoldFruit(IEnumerable<CodeInstruction> instructions)
         {
-            var newInstructions = new CodeMatcher(instructions)
-                .MatchForward(false, new CodeMatch(OpCodes.Ldstr, " Gold and "))
-                .Advance(4)
+            var cm = new CodeMatcher(instructions);
+            cm.MatchForward(false, new CodeMatch(OpCodes.Ldstr, " Gold and "));
+            if (cm.IsInvalid) return instructions;
+
+            return cm.Advance(4)
                 .InsertAndAdvance(
                     new CodeInstruction(OpCodes.Ldarg_0),
                     new CodeInstruction(OpCodes.Ldfld, _characterField))
@@ -41,16 +43,16 @@ namespace jshepler.ngu.mods
                 .RemoveInstruction()
                 .InsertAndAdvance(new CodeInstruction(OpCodes.Conv_R8), new CodeInstruction(OpCodes.Callvirt, _characterDisplay))
                 .InstructionEnumeration();
-
-            return newInstructions;
         }
 
         [HarmonyTranspiler, HarmonyPatch("consumePowerFruit")]
         private static IEnumerable<CodeInstruction> consumePowerFruit(IEnumerable<CodeInstruction> instructions)
         {
-            var newInstructions = new CodeMatcher(instructions)
-                .MatchForward(false, new CodeMatch(OpCodes.Ldstr, "%</b>.You've also gained "))
-                .Advance(4)
+            var cm = new CodeMatcher(instructions);
+            cm.MatchForward(false, new CodeMatch(OpCodes.Ldstr, "%</b>.You've also gained "));
+            if (cm.IsInvalid) return instructions;
+
+            return cm.Advance(4)
                 .InsertAndAdvance(
                     new CodeInstruction(OpCodes.Ldarg_0),
                     new CodeInstruction(OpCodes.Ldfld, _characterField))
@@ -58,16 +60,16 @@ namespace jshepler.ngu.mods
                 .RemoveInstruction()
                 .InsertAndAdvance(new CodeInstruction(OpCodes.Conv_R8), new CodeInstruction(OpCodes.Callvirt, _characterDisplay))
                 .InstructionEnumeration();
-
-            return newInstructions;
         }
 
         [HarmonyTranspiler, HarmonyPatch("consumeAPFruit")]
         private static IEnumerable<CodeInstruction> consumeAPFruit(IEnumerable<CodeInstruction> instructions)
         {
-            var newInstructions = new CodeMatcher(instructions)
-                .MatchForward(false, new CodeMatch(OpCodes.Ldstr, " AP and "))
-                .Advance(-5)
+            var cm = new CodeMatcher(instructions);
+            cm.MatchForward(false, new CodeMatch(OpCodes.Ldstr, " AP and "));
+            if (cm.IsInvalid) return instructions;
+
+            return cm.Advance(-5)
                 .InsertAndAdvance(
                     new CodeInstruction(OpCodes.Ldarg_0),
                     new CodeInstruction(OpCodes.Ldfld, _characterField))
@@ -75,8 +77,6 @@ namespace jshepler.ngu.mods
                 .RemoveInstruction()
                 .InsertAndAdvance(new CodeInstruction(OpCodes.Conv_R8), new CodeInstruction(OpCodes.Callvirt, _characterDisplay))
                 .InstructionEnumeration();
-
-            return newInstructions;
         }
     }
 }

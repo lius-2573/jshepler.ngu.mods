@@ -7,7 +7,7 @@ namespace jshepler.ngu.mods
     [HarmonyPatch]
     internal class NumberFormating
     {
-        private static double _threshold = Math.Max(1e+6, Options.MixedNumberFormat.Threshold.Value);
+        private static double _threshold = 1e+6;
 
         // these allow the number formatting to do appropriate formatting with negative numbers
         // as well as implementing mixed number format (sci/eng uses suffix if number < threshold)

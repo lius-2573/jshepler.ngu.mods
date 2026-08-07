@@ -6,7 +6,36 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <GameFolder>D:\Steam\steamapps\common\NGU IDLE</GameFolder>
+        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Plugin.cs" />
+        <Compile Include="Options.cs" />
+        <Compile Include="EnableVT.cs" />
+        <Compile Include="Fonts.cs" />
+        <Compile Include="Menu.cs" />
+        <Compile Include="ClickHandlerComponent.cs" />
+        <Compile Include="NumberFormating.cs" />
+        <Compile Include="SimpleJSON.cs" />
+        <Compile Include="SimpleJSONDotNetTypes.cs" />
+        <Compile Include="IsExternalInit.cs" />
+        <Compile Include="AutoHarvestFruits.cs" />
+        <Compile Include="ImprovedYggTooltips.cs" />
+        <Compile Include="FixYggSeedsGainedDisplayFormat.cs" />
+        <Compile Include="MergeBoostAll.cs" />
+        <Compile Include="AutoTransformPendantsAndLooties.cs" />
+        <Compile Include="Heirloom.cs" />
+        <Compile Include="AutoManualMajorQuesting.cs" />
+        <Compile Include="AutoButter.cs" />
+        <Compile Include="GameData\Fruits.cs" />
+        <Compile Include="GameData\Quests.cs" />
+        <Compile Include="ModSave\Data.cs" />
+        <Compile Include="ModSave\LocalVar.cs" />
+        <Compile Include="ModSave\ModPlayerData.cs" />
+        <Compile Include="ModSave\Patches.cs" />
+        <Compile Include="ModSave\PlayerDataBinder.cs" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
@@ -22,22 +51,6 @@
 
     <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
         <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Compile Update="Resources\Resources.Designer.cs">
-            <DesignTime>True</DesignTime>
-            <AutoGen>True</AutoGen>
-            <DependentUpon>Resources.resx</DependentUpon>
-        </Compile>
-    </ItemGroup>
-
-    <ItemGroup>
-        <EmbeddedResource Update="Resources\Resources.resx">
-            <Generator>ResXFileCodeGenerator</Generator>
-            <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-            <CustomToolNamespace>jshepler.ngu.mods</CustomToolNamespace>
-        </EmbeddedResource>
     </ItemGroup>
 
     <Target Name="CopyDLL" AfterTargets="Build">

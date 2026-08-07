@@ -14,7 +14,9 @@ namespace jshepler.ngu.mods
             set => Options.BloodMagic.AutoCast.Value = value;
         }
 
-        // Iron Pill: RebirthPowerSpell.castAdventurePowerupSpell (confirmed via TrackBaseAdvPowerGained.cs)
+        // Iron Pill has no native auto-cast in the game; the only confirmed cast method in the codebase.
+        // gold/loot/rebirth spells have their own vanilla auto-cast checkboxes (goldAutoSpell etc.),
+        // which are intentionally left alone - the player controls those manually.
         private static MethodInfo _castIP = typeof(RebirthPowerSpell).GetMethod("castAdventurePowerupSpell", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
         [HarmonyPostfix, HarmonyPatch(typeof(ButtonShower), "Start")]
@@ -33,17 +35,8 @@ namespace jshepler.ngu.mods
 
             Plugin.OnUpdate += (o, e) =>
             {
-                if (Plugin.Character == null)
-                    return;
-
                 if (_enabled)
-                {
-                    ensureAutoSpells();
                     castReadySpells();
-                }
-
-                else
-                    restoreAutoSpells();
             };
         }
 
@@ -61,42 +54,7 @@ namespace jshepler.ngu.mods
             button.image.color = _enabled ? Plugin.ButtonColor_LightBlue : Color.white;
         }
 
-        // the game has native auto-cast for gold/loot/rebirth spells (goldAutoSpell etc.);
-        // when enabled, force those on so the game casts them as soon as they're ready;
-        // remember the original state and restore it when disabled
-        private static bool _restoreAuto = false;
-        private static bool _origGold, _origLoot, _origRebirth;
-
-        private static void ensureAutoSpells()
-        {
-            var bm = Plugin.Character.bloodMagic;
-
-            if (!_restoreAuto)
-            {
-                _origGold = bm.goldAutoSpell;
-                _origLoot = bm.lootAutoSpell;
-                _origRebirth = bm.rebirthAutoSpell;
-                _restoreAuto = true;
-            }
-
-            bm.goldAutoSpell = true;
-            bm.lootAutoSpell = true;
-            bm.rebirthAutoSpell = true;
-        }
-
-        private static void restoreAutoSpells()
-        {
-            if (!_restoreAuto)
-                return;
-
-            var bm = Plugin.Character.bloodMagic;
-            bm.goldAutoSpell = _origGold;
-            bm.lootAutoSpell = _origLoot;
-            bm.rebirthAutoSpell = _origRebirth;
-            _restoreAuto = false;
-        }
-
-        // Iron Pill has no native auto-cast, so cast it ourselves when ready
+        // Iron Pill is ready when the boss that unlocks it (37) is defeated and its cooldown has elapsed
         private static void castReadySpells()
         {
             var character = Plugin.Character;

@@ -14,7 +14,7 @@ namespace jshepler.ngu.mods
 
             MoneyPit.AutoToss = Config.Bind("MoneyPit", "AutoToss", false, "automatically toss gold into the money pit as soon as it's ready");
             DailySpin.AutoSpin = Config.Bind("DailySpin", "AutoSpin", false, "automatically spin the daily wheel as soon as it's ready");
-            BloodMagic.AutoCast = Config.Bind("BloodMagic", "AutoCast", false, "automatically cast blood magic spells (Iron Pill, and enable game's auto gold/loot/rebirth spells) as soon as they're ready");
+            BloodMagic.AutoCast = Config.Bind("BloodMagic", "AutoCast", false, "automatically cast Iron Pill as soon as it's ready (gold/loot/rebirth spells have their own vanilla auto-cast checkboxes, which this leaves untouched)");
         }
 
         internal static class Yggdrasil

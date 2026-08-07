@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>net48</TargetFramework>
         <AssemblyName>jshepler.ngu.mods</AssemblyName>
@@ -21,6 +21,8 @@
         <Compile Include="SimpleJSONDotNetTypes.cs" />
         <Compile Include="IsExternalInit.cs" />
         <Compile Include="AutoHarvestFruits.cs" />
+        <Compile Include="AutoDailyActions.cs" />
+        <Compile Include="AutoBloodMagic.cs" />
         <Compile Include="ImprovedYggTooltips.cs" />
         <Compile Include="FixYggSeedsGainedDisplayFormat.cs" />
         <Compile Include="MergeBoostAll.cs" />

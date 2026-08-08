@@ -97,6 +97,24 @@ namespace jshepler.ngu.mods
         [HarmonyPostfix, HarmonyPatch(typeof(BeastQuestController), "completeQuest")]
         private static void BeastQuestController_completeQuest_postfix(BeastQuestController __instance)
         {
+            // ensure static fields are set even if ButtonShower.Start hasn't run
+            if (_controller == null) _controller = __instance;
+            if (_character == null) _character = __instance.character;
+
+            // auto-start: banked quests hit the threshold (player was idle-farming while bank was full)
+            if (!_enabled && !_manuallyDisabled)
+            {
+                var configured = ModSave.Data.AutoQuestingStartThreshold;
+                var threshold = configured > 0 ? Mathf.Max(1, configured) : _controller.maxBankedQuests();
+
+                if (_character.beastQuest.curBankedQuests >= threshold)
+                {
+                    _enabled = true;
+                    StartManualMajorQuest();
+                    return;
+                }
+            }
+
             if (!_enabled)
                 return;
 
@@ -111,26 +129,57 @@ namespace jshepler.ngu.mods
         }
 
         // if auto questing is off and banked major quests pile up to the configured threshold,
-        // start running them automatically (unless the player explicitly turned auto off)
+        // start running them automatically (unless the player explicitly turned auto off).
+        // deliberately NOT short-circuited by _enabled: if auto was previously left on (persisted)
+        // while not in a quest and the bank is full, the completeQuest/makeLoot hooks never fire,
+        // so this is the only place that starts the first quest.
         [HarmonyPostfix, HarmonyPatch(typeof(BeastQuestController), "Update")]
         private static void BeastQuestController_Update_postfix(BeastQuestController __instance)
         {
-            if (_enabled || _manuallyDisabled)
+            if (_manuallyDisabled)
                 return;
 
-            if (_controller == null)
-                _controller = __instance;
-            if (_character == null)
-                _character = __instance.character;
+            if (_controller == null) _controller = __instance;
+            if (_character == null) _character = __instance.character;
 
             var quest = _character.beastQuest;
+            var threshold = ModSave.Data.AutoQuestingStartThreshold;
+            var thresholdValue = threshold > 0 ? Mathf.Max(1, threshold) : _controller.maxBankedQuests();
+
+            // if in a quest and bank is full, break out of idle/minor to start majors
             if (quest.inQuest)
+            {
+                if (quest.curBankedQuests < thresholdValue)
+                    return;
+
+                if (quest.idleMode || !_character.settings.useMajorQuests)
+                {
+                    if (!_enabled)
+                        _enabled = true;
+
+                    if (!_character.settings.useMajorQuests)
+                        _controller.toggleMajorQuestUse();
+
+                    if (quest.idleMode)
+                        _controller.toggleIdleMode();
+
+                    _controller.skipQuest();
+                    _controller.startQuest();
+                    _controller.refreshMenu();
+                }
+                return;
+            }
+
+            // not in a quest: if bank is full, auto-start
+            if (quest.curBankedQuests < thresholdValue)
                 return;
 
-            if (quest.curBankedQuests < Mathf.Max(1, ModSave.Data.AutoQuestingStartThreshold))
-                return;
+            if (!_enabled)
+                _enabled = true;
 
-            _enabled = true;
+            if (!_character.settings.beastOn)
+                _character.settings.beastOn = true;
+
             StartManualMajorQuest();
         }
 

@@ -30,7 +30,9 @@ namespace jshepler.ngu.mods.ModSave
 
         internal static int AutoQuestingStartThreshold
         {
-            get => Get("AutoQuestingStartThreshold", 45);
+            // 0 = follow current maxBankedQuests() (start as soon as the bank is full);
+            // >0 = explicit threshold to start at
+            get => Get("AutoQuestingStartThreshold", 0);
             set => Set("AutoQuestingStartThreshold", value);
         }
 

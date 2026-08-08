@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace jshepler.ngu.mods.ModSave
 {
@@ -26,6 +26,12 @@ namespace jshepler.ngu.mods.ModSave
         {
             get => Get<bool>("AutoQuestingEnabled");
             set => Set("AutoQuestingEnabled", value);
+        }
+
+        internal static int AutoQuestingStartThreshold
+        {
+            get => Get("AutoQuestingStartThreshold", 45);
+            set => Set("AutoQuestingStartThreshold", value);
         }
 
         internal static string[] LastYggRewards

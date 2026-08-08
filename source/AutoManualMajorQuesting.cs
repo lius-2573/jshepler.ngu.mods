@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
@@ -10,6 +10,10 @@ namespace jshepler.ngu.mods
     {
         private static Character _character;
         private static BeastQuestController _controller;
+
+        // set when the player explicitly toggles auto questing off via right-click;
+        // suppresses the auto-start-on-threshold until the player re-enables manually
+        private static bool _manuallyDisabled;
         
         private static bool _enabled
         {
@@ -45,6 +49,7 @@ namespace jshepler.ngu.mods
                     if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
                     {
                         _enabled = !_enabled;
+                        _manuallyDisabled = !_enabled;
                         __instance.beast.image.color = _enabled ? Plugin.ButtonColor_LightBlue : Color.white;
 
                         StartManualMajorQuest();
@@ -102,6 +107,30 @@ namespace jshepler.ngu.mods
                 return;
             }
 
+            StartManualMajorQuest();
+        }
+
+        // if auto questing is off and banked major quests pile up to the configured threshold,
+        // start running them automatically (unless the player explicitly turned auto off)
+        [HarmonyPostfix, HarmonyPatch(typeof(BeastQuestController), "Update")]
+        private static void BeastQuestController_Update_postfix(BeastQuestController __instance)
+        {
+            if (_enabled || _manuallyDisabled)
+                return;
+
+            if (_controller == null)
+                _controller = __instance;
+            if (_character == null)
+                _character = __instance.character;
+
+            var quest = _character.beastQuest;
+            if (quest.inQuest)
+                return;
+
+            if (quest.curBankedQuests < Mathf.Max(1, ModSave.Data.AutoQuestingStartThreshold))
+                return;
+
+            _enabled = true;
             StartManualMajorQuest();
         }
 

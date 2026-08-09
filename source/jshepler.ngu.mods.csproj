@@ -30,6 +30,7 @@
         <Compile Include="Heirloom.cs" />
         <Compile Include="AutoManualMajorQuesting.cs" />
         <Compile Include="AutoButter.cs" />
+        <Compile Include="AutoAdventure.cs" />
         <Compile Include="GameData\Fruits.cs" />
         <Compile Include="GameData\Quests.cs" />
         <Compile Include="ModSave\Data.cs" />

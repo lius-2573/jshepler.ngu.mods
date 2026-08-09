@@ -36,6 +36,20 @@ namespace jshepler.ngu.mods.ModSave
             set => Set("AutoQuestingStartThreshold", value);
         }
 
+        internal static bool AutoAdventureEnabled
+        {
+            get => Get<bool>("AutoAdventureEnabled");
+            set => Set("AutoAdventureEnabled", value);
+        }
+
+        internal static int AutoAdventureZone
+        {
+            // target adventure zone id to return to after being defeated and healed
+            // in the safe zone; -1 = none
+            get => Get("AutoAdventureZone", -1);
+            set => Set("AutoAdventureZone", value);
+        }
+
         internal static string[] LastYggRewards
         {
             get => Get("LastYggRewards", new string[21]);

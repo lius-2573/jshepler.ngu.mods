@@ -28,6 +28,7 @@
 | 钱坑自动投金币 | `[MoneyPit] AutoToss`(true) | 钱坑按钮 **Shift+右键** 切换(浅蓝) | 钱坑冷却结束(`canToss`)即自动投入金币并弹出提示 |
 | 每日转盘自动转 | `[DailySpin] AutoSpin`(true) | 钱坑按钮 **Alt+右键** 切换(绿色) | 每日转盘就绪(`canSpin`)即自动转动并弹出结果提示 |
 | 血魔法自动施铁柱 | `[BloodMagic] AutoCast`(true) | 血魔法按钮 **Shift+右键** 切换(浅蓝) | 击败 boss 37 解锁后,冒险法术冷却结束即自动施放铁柱(Iron Pill);金币/掉落/重生法术仍由游戏原生复选框控制,本功能不干预 |
+| 高级训练自动切换能量 | `[AdvancedTraining] AutoAllocateEnergy`(true) | 高级训练按钮 **Shift+右键** 切换(浅蓝) | 高级训练解锁后，所有未完成的训练同时分配下一级100%等级上限能量;不足时从NGU能量释放;任一训练完成后将该训练能量自动转回仍在运行的NGU |
 | 自动合并/转化吊坠与 Looty | `[AutoMergeTransform] Enabled`(true) | — | 执行合并时自动把吊坠/Looty/Flubber 合成到最高级并转化为下一阶段物品(A9/lootz 除外),可一次跑多轮直至无可转化 |
 | 自动使用黄油 | `[Questing] AutoButter`(true) | 野兽任务界面"黄油"按钮 **Shift+右键** 切换(浅蓝) | 开始主线任务时自动使用黄油(有黄油、非挂机模式、未使用过黄油时) |
 | 自动手动主线任务 | 状态存入存档(无配置文件项) | 野兽按钮 **Shift+右键** 切换(浅蓝);普通**右键** = 收集任务物品 | 自动领取/完成手动主线任务:自动收集掉落、自动跳转任务区域、完成后自动接续下一个;取消勾选游戏内"使用主线"即停止。转生结算后若不再处于手动主线,自动关闭。**银行主线积攒达到阈值自动开跑**:关闭状态下积攒数达到存档键 `AutoQuestingStartThreshold`(默认 `0` = 跟随当前银行上限,攒满即触发;设 >0 可指定具体阈值)时自动开启并开始做主线,自动开启 beast、退出挂机模式并切换到主线;做到积攒数为 0 自动停止。右键显式关闭后不再自动开启,需手动重新打开 |
@@ -54,6 +55,7 @@
 | `[DailySpin]` | `AutoSpin` | `true` | 每日转盘自动转 |
 | `[BloodMagic]` | `AutoCast` | `true` | 铁柱自动施法 |
 | `[AutoMergeTransform]` | `Enabled` | `true` | 吊坠/Looty 自动合并转化 |
+| `[AdvancedTraining]` | `AutoAllocateEnergy` | `true` | 高级训练与NGU之间自动切换能量 |
 | `[Questing]` | `AutoButter` | `true` | 主线任务自动黄油 |
 
 ## 构建操作

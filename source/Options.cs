@@ -8,6 +8,7 @@ namespace jshepler.ngu.mods
     {
         internal static void Init(ConfigFile Config)
         {
+            AdvancedTraining.AutoAllocateEnergy = Config.Bind("AdvancedTraining", "AutoAllocateEnergy", true, "automatically allocate 100% next-level energy to advanced training and return it to NGU when the target is reached");
             Yggdrasil.AutoHarvest = Config.Bind("Yggdrasil", "AutoHarvest", true, "enable auto harvest/eat fruits when fully grown (max tier)");
             AutoMergeTransform.Enabled = Config.Bind("AutoMergeTransform", "Enabled", true, "enables/disables auto merging and transforming of pendants and looties");
             Questing.AutoButter = Config.Bind("Questing", "AutoButter", true, "If true, will automatically use butter when starting a major quest");
@@ -40,6 +41,11 @@ namespace jshepler.ngu.mods
         internal static class DailySpin
         {
             internal static ConfigEntry<bool> AutoSpin;
+        }
+
+        internal static class AdvancedTraining
+        {
+            internal static ConfigEntry<bool> AutoAllocateEnergy;
         }
 
         internal static class BloodMagic

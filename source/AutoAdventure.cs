@@ -7,6 +7,7 @@ namespace jshepler.ngu.mods
     [HarmonyPatch]
     internal class AutoAdventure
     {
+        private static int _lastCheckFrame = -1;
         private static Character _character;
         private static AdventureController _controller;
 
@@ -35,7 +36,11 @@ namespace jshepler.ngu.mods
 
             // after offline progression / loading a save the character is wherever the
             // game left them; don't yank them into an adventure zone right after that
-            Plugin.OnOfflineProgressionComplete += (o, e) => _waitingForRespawn = false;
+            Plugin.OnOfflineProgressionComplete += (o, e) =>
+            {
+                _waitingForRespawn = false;
+                AutomationThrottle.Reset(ref _lastCheckFrame);
+            };
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ButtonShower), "Start")]
@@ -67,6 +72,7 @@ namespace jshepler.ngu.mods
         {
             if (!_enabled || __instance.zone == 1000)
                 return;
+            AutomationThrottle.Reset(ref _lastCheckFrame);
 
             _waitingForRespawn = true;
         }
@@ -77,6 +83,9 @@ namespace jshepler.ngu.mods
         private static void AdventureController_Update_postfix(AdventureController __instance)
         {
             if (!_waitingForRespawn || !_enabled)
+                return;
+
+            if (!AutomationThrottle.ShouldRunEveryFrames(ref _lastCheckFrame))
                 return;
 
             var character = __instance.character;
@@ -112,6 +121,7 @@ namespace jshepler.ngu.mods
         private static void AdventureController_reset_postfix()
         {
             _waitingForRespawn = false;
+            AutomationThrottle.Reset(ref _lastCheckFrame);
         }
 
         private static void Toggle()
@@ -132,6 +142,7 @@ namespace jshepler.ngu.mods
                 if (_targetZone >= 0 && _targetZone != 1000)
                 {
                     _enabled = true;
+                    AutomationThrottle.Reset(ref _lastCheckFrame);
                     Plugin.ShowNotification($"自动回到冒险区域：已开启（目标：{_controller.zoneName(_targetZone)}）");
                     return;
                 }
@@ -142,6 +153,7 @@ namespace jshepler.ngu.mods
 
             _targetZone = zone;
             _enabled = true;
+            AutomationThrottle.Reset(ref _lastCheckFrame);
             Plugin.ShowNotification($"自动回到冒险区域：已开启（目标：{_controller.zoneName(zone)}）");
         }
     }

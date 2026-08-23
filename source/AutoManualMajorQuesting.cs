@@ -14,6 +14,7 @@ namespace jshepler.ngu.mods
         // set when the player explicitly toggles auto questing off via right-click;
         // suppresses the auto-start-on-threshold until the player re-enables manually
         private static bool _manuallyDisabled;
+        private static int _lastCheckFrame = -1;
         
         private static bool _enabled
         {
@@ -31,6 +32,7 @@ namespace jshepler.ngu.mods
             Plugin.OnOfflineProgressionComplete += (o, e) =>
             {
                 _enabled = _enabled && InManualQuest() && !_character.beastQuest.reducedRewards; //_character.settings.useMajorQuests;
+                AutomationThrottle.Reset(ref _lastCheckFrame);
             };
         }
 
@@ -50,6 +52,8 @@ namespace jshepler.ngu.mods
                     {
                         _enabled = !_enabled;
                         _manuallyDisabled = !_enabled;
+                        if (_enabled)
+                            AutomationThrottle.Reset(ref _lastCheckFrame);
                         __instance.beast.image.color = _enabled ? Plugin.ButtonColor_LightBlue : Color.white;
 
                         StartManualMajorQuest();
@@ -141,6 +145,8 @@ namespace jshepler.ngu.mods
 
             if (_controller == null) _controller = __instance;
             if (_character == null) _character = __instance.character;
+            if (!AutomationThrottle.ShouldRunEveryFrames(ref _lastCheckFrame))
+                return;
 
             var quest = _character.beastQuest;
             var threshold = ModSave.Data.AutoQuestingStartThreshold;

@@ -8,6 +8,7 @@ namespace jshepler.ngu.mods
     [HarmonyPatch]
     internal class AutoDailyActions
     {
+        private static int _lastCheckFrame = -1;
         private static bool _autoToss
         {
             get => Options.MoneyPit.AutoToss.Value;
@@ -34,18 +35,25 @@ namespace jshepler.ngu.mods
                     if (Plugin.ShiftIsDown)
                     {
                         _autoToss = !_autoToss;
+                        if (_autoToss)
+                            AutomationThrottle.Reset(ref _lastCheckFrame);
                         setColor(button);
                     }
-
                     else if (Plugin.AltIsDown)
                     {
                         _autoSpin = !_autoSpin;
+                        if (_autoSpin)
+                            AutomationThrottle.Reset(ref _lastCheckFrame);
                         setColor(button);
                     }
                 });
 
             Plugin.OnUpdate += (o, e) =>
             {
+                if ((!_autoToss && !_autoSpin)
+                    || !AutomationThrottle.ShouldRunEveryFrames(ref _lastCheckFrame))
+                    return;
+
                 if (_autoToss)
                     tossGold();
 

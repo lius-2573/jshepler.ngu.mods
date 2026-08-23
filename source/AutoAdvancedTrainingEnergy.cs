@@ -7,6 +7,7 @@ namespace jshepler.ngu.mods
     [HarmonyPatch]
     internal static class AutoAdvancedTrainingEnergy
     {
+        private static int _lastCheckFrame = -1;
 
         private static bool _enabled
         {
@@ -24,6 +25,8 @@ namespace jshepler.ngu.mods
                         return;
 
                     _enabled = !_enabled;
+                    if (_enabled)
+                        AutomationThrottle.Reset(ref _lastCheckFrame);
                     SetButtonColor(__instance.advancedTraining);
                 });
 
@@ -51,6 +54,9 @@ namespace jshepler.ngu.mods
         private static void UpdateAllocation()
         {
             if (!_enabled)
+                return;
+
+            if (!AutomationThrottle.ShouldRunEveryFrames(ref _lastCheckFrame))
                 return;
 
             var character = Plugin.Character;

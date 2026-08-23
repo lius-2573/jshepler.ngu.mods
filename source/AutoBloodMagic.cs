@@ -8,6 +8,7 @@ namespace jshepler.ngu.mods
     [HarmonyPatch]
     internal class AutoBloodMagic
     {
+        private static int _lastCheckFrame = -1;
         private static bool _enabled
         {
             get => Options.BloodMagic.AutoCast.Value;
@@ -30,12 +31,15 @@ namespace jshepler.ngu.mods
                         return;
 
                     _enabled = !_enabled;
+                    if (_enabled)
+                        AutomationThrottle.Reset(ref _lastCheckFrame);
                     setColor(button);
                 });
 
+
             Plugin.OnUpdate += (o, e) =>
             {
-                if (_enabled)
+                if (_enabled && AutomationThrottle.ShouldRunEveryFrames(ref _lastCheckFrame))
                     castReadySpells();
             };
         }

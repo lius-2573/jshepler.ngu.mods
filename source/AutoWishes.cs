@@ -12,6 +12,17 @@ namespace jshepler.ngu.mods
         private static readonly List<int> _runningWishIds = new();
         private static int _pendingWishSlots;
         private static float _lastCheckTime = float.NegativeInfinity;
+        private enum ResourceKind
+        {
+            Energy,
+            Magic,
+            Res3
+        }
+
+        private static int _energyRemainderStart;
+        private static int _magicRemainderStart;
+        private static int _res3RemainderStart;
+
 
         private static bool _enabled
         {
@@ -94,7 +105,7 @@ namespace jshepler.ngu.mods
                 return;
 
             var started = TryStartPendingWishes(controller);
-            var changed = AllocateIdleResources(controller);
+            var changed = RebalanceResources(controller);
             if (started)
                 controller.updateMenu();
             else if (changed)
@@ -128,89 +139,116 @@ namespace jshepler.ngu.mods
             }
         }
 
-        private static bool AllocateIdleResources(WishesController controller)
+        private static bool RebalanceResources(WishesController controller)
         {
             CollectRunningWishes(controller);
             if (_runningWishIds.Count == 0)
                 return false;
 
+            var character = controller.character;
             var changed = false;
-            changed |= DistributeEnergy(controller.character, _runningWishIds);
-            changed |= DistributeMagic(controller.character, _runningWishIds);
-            changed |= DistributeRes3(controller.character, _runningWishIds);
+            changed |= RebalanceResource(character, _runningWishIds, ResourceKind.Energy, ref _energyRemainderStart);
+            changed |= RebalanceResource(character, _runningWishIds, ResourceKind.Magic, ref _magicRemainderStart);
+            changed |= RebalanceResource(character, _runningWishIds, ResourceKind.Res3, ref _res3RemainderStart);
             return changed;
         }
 
-        private static bool DistributeEnergy(Character character, List<int> wishIds)
+        private static bool RebalanceResource(Character character, List<int> wishIds, ResourceKind kind, ref int remainderStart)
         {
-            var idle = character.idleEnergy;
-            if (idle <= 0)
-                return false;
-
-            var remaining = idle;
+            var total = GetIdleResource(character, kind);
             for (var index = 0; index < wishIds.Count; index++)
             {
-                var slotsLeft = wishIds.Count - index;
-                var share = remaining / slotsLeft;
-                if (remaining % slotsLeft > 0)
-                    share++;
-
                 var wish = character.wishes.wishes[wishIds[index]];
-                var amount = Math.Min(share, long.MaxValue - wish.energy);
-                wish.energy += amount;
-                remaining -= amount;
+                total = SaturatingAdd(total, GetWishResource(wish, kind));
+                SetWishResource(wish, kind, 0L);
             }
 
-            character.idleEnergy = remaining;
-            return remaining != idle;
+            if (total <= 0)
+                return false;
+
+            SetIdleResource(character, kind, 0L);
+
+            var share = total / wishIds.Count;
+            var remainder = (int)(total % wishIds.Count);
+            var start = remainderStart % wishIds.Count;
+            if (start < 0)
+                start += wishIds.Count;
+
+            for (var index = 0; index < wishIds.Count; index++)
+            {
+                var distance = (index - start + wishIds.Count) % wishIds.Count;
+                var amount = share + (distance < remainder ? 1L : 0L);
+                var wish = character.wishes.wishes[wishIds[index]];
+                SetWishResource(wish, kind, amount);
+            }
+
+            remainderStart = (start + remainder) % wishIds.Count;
+            return true;
         }
 
-        private static bool DistributeMagic(Character character, List<int> wishIds)
+        private static long GetIdleResource(Character character, ResourceKind kind)
         {
-            var idle = character.magic.idleMagic;
-            if (idle <= 0)
-                return false;
-
-            var remaining = idle;
-            for (var index = 0; index < wishIds.Count; index++)
+            return kind switch
             {
-                var slotsLeft = wishIds.Count - index;
-                var share = remaining / slotsLeft;
-                if (remaining % slotsLeft > 0)
-                    share++;
-
-                var wish = character.wishes.wishes[wishIds[index]];
-                var amount = Math.Min(share, long.MaxValue - wish.magic);
-                wish.magic += amount;
-                remaining -= amount;
-            }
-
-            character.magic.idleMagic = remaining;
-            return remaining != idle;
+                ResourceKind.Energy => character.idleEnergy,
+                ResourceKind.Magic => character.magic.idleMagic,
+                ResourceKind.Res3 => character.res3.idleRes3,
+                _ => 0L
+            };
         }
 
-        private static bool DistributeRes3(Character character, List<int> wishIds)
+        private static void SetIdleResource(Character character, ResourceKind kind, long amount)
         {
-            var idle = character.res3.idleRes3;
-            if (idle <= 0)
-                return false;
-
-            var remaining = idle;
-            for (var index = 0; index < wishIds.Count; index++)
+            switch (kind)
             {
-                var slotsLeft = wishIds.Count - index;
-                var share = remaining / slotsLeft;
-                if (remaining % slotsLeft > 0)
-                    share++;
-
-                var wish = character.wishes.wishes[wishIds[index]];
-                var amount = Math.Min(share, long.MaxValue - wish.res3);
-                wish.res3 += amount;
-                remaining -= amount;
+                case ResourceKind.Energy:
+                    character.idleEnergy = amount;
+                    break;
+                case ResourceKind.Magic:
+                    character.magic.idleMagic = amount;
+                    break;
+                case ResourceKind.Res3:
+                    character.res3.idleRes3 = amount;
+                    break;
             }
+        }
 
-            character.res3.idleRes3 = remaining;
-            return remaining != idle;
+        private static long GetWishResource(Wish wish, ResourceKind kind)
+        {
+            return kind switch
+            {
+                ResourceKind.Energy => wish.energy,
+                ResourceKind.Magic => wish.magic,
+                ResourceKind.Res3 => wish.res3,
+                _ => 0L
+            };
+        }
+
+        private static void SetWishResource(Wish wish, ResourceKind kind, long amount)
+        {
+            switch (kind)
+            {
+                case ResourceKind.Energy:
+                    wish.energy = amount;
+                    break;
+                case ResourceKind.Magic:
+                    wish.magic = amount;
+                    break;
+                case ResourceKind.Res3:
+                    wish.res3 = amount;
+                    break;
+            }
+        }
+
+        private static long SaturatingAdd(long left, long right)
+        {
+            if (right <= 0)
+                return left;
+
+            if (left >= long.MaxValue - right)
+                return long.MaxValue;
+
+            return left + right;
         }
 
         private static bool TryStartPendingWishes(WishesController controller)
@@ -296,6 +334,9 @@ namespace jshepler.ngu.mods
         {
             _pendingWishSlots = 0;
             AutomationThrottle.Reset(ref _lastCheckTime);
+            _energyRemainderStart = 0;
+            _magicRemainderStart = 0;
+            _res3RemainderStart = 0;
             _runningWishIds.Clear();
         }
 

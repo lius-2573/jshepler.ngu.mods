@@ -19,6 +19,17 @@ namespace jshepler.ngu.mods
             BloodMagic.AutoCast = Config.Bind("BloodMagic", "AutoCast", true, "automatically cast Iron Pill as soon as it's ready (gold/loot/rebirth spells have their own vanilla auto-cast checkboxes, which this leaves untouched)");
             Performance.FrameCheckInterval = Config.Bind("Performance", "FrameCheckInterval", 60, "number of rendered frames between checks for frame-based automation");
             Performance.WishCheckIntervalSeconds = Config.Bind("Performance", "WishCheckIntervalSeconds", 1f, "seconds between AutoWishes checks");
+            Cards.AutoSortEnabled = Config.Bind("Cards", "AutoSort.Enabled", true, "if enabled, sorts cards as they are added");
+            Cards.AutoSortBy = Config.Bind("Cards", "AutoSort.By", CardSortBy.RarityFirst, "RarityFirst: rarity, type, bonus; TypeFirst: type, rarity, bonus; Efficiency: bonus per mayo; Variance: bonus variance");
+            Cards.AutoSortDirection = Config.Bind("Cards", "AutoSort.Direction", CardSortDirection.Ascending, "the order cards are sorted");
+            Cards.AutoYeetMode = Config.Bind("Cards", "AutoYeet.Mode", CardYeetMode.Disabled, "what is used to determine when to auto yeet a card");
+            Cards.MaxYeetRarity = Config.Bind("Cards", "AutoYeet.MaxYeetRarity", rarity.Crappy, "if AutoYeet.Mode is Rarity, this is a card's max rarity that will get yeeted");
+            Cards.MaxYeetEfficiency = Config.Bind("Cards", "AutoYeet.MaxYeetEfficiency", 0f, "if AutoYeet.Mode is Efficiency, this is a card's max mayo efficiency that will get yeeted");
+            Cards.MaxYeetVariance = Config.Bind("Cards", "AutoYeet.MaxYeetVariance", 0f, "if AutoYeet.Mode is Variance, this is a card's max variance that will get yeeted");
+            Cards.AlwaysYeetCSV = Config.Bind("Cards", "AutoYeet.AlwaysYeet", "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0", "card bonus flags, configured as a comma-separated list");
+            Cards.AutoProtectChonkers = Config.Bind("Cards", "AutoProtectChonkers", true, "automatically protect Chonker cards when they spawn");
+            Cards.AutoCastEnabled = Config.Bind("Cards", "AutoCast.Enabled", false, "automatically cast one highest-priority ordinary unprotected card at each automation check");
+
         }
 
         internal static class Yggdrasil
@@ -64,6 +75,19 @@ namespace jshepler.ngu.mods
         {
             internal static ConfigEntry<int> FrameCheckInterval;
             internal static ConfigEntry<float> WishCheckIntervalSeconds;
+        }
+        internal static class Cards
+        {
+            internal static ConfigEntry<bool> AutoSortEnabled;
+            internal static ConfigEntry<CardSortBy> AutoSortBy;
+            internal static ConfigEntry<CardSortDirection> AutoSortDirection;
+            internal static ConfigEntry<CardYeetMode> AutoYeetMode;
+            internal static ConfigEntry<rarity> MaxYeetRarity;
+            internal static ConfigEntry<float> MaxYeetEfficiency;
+            internal static ConfigEntry<float> MaxYeetVariance;
+            internal static ConfigEntry<string> AlwaysYeetCSV;
+            internal static ConfigEntry<bool> AutoProtectChonkers;
+            internal static ConfigEntry<bool> AutoCastEnabled;
         }
     }
 }

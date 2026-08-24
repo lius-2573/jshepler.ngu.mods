@@ -29,7 +29,8 @@
 | 每日转盘自动转 | `[DailySpin] AutoSpin`(true) | 钱坑按钮 **Alt+右键** 切换(绿色) | 每日转盘就绪(`canSpin`)即自动转动并弹出结果提示 |
 | 血魔法自动施铁柱 | `[BloodMagic] AutoCast`(true) | 血魔法按钮 **Shift+右键** 切换(浅蓝) | 击败 boss 37 解锁后,冒险法术冷却结束即自动施放铁柱(Iron Pill);金币/掉落/重生法术仍由游戏原生复选框控制,本功能不干预 |
 | 高级训练自动切换能量 | `[AdvancedTraining] AutoAllocateEnergy`(true) | 高级训练按钮 **Shift+右键** 切换(浅蓝) | 高级训练解锁后，所有未完成的训练同时分配下一级100%等级上限能量;不足时从NGU能量释放;任一训练完成后将该训练能量自动转回仍在运行的NGU |
-| 自动许愿资源分配与续愿 | `[Wishes] AutoAllocate`(false) | 许愿按钮 **Shift+右键** 切换(浅蓝) | 每 1 秒检查一次;将当前空闲的能量、魔力、第三资源平均分配到当前运行的所有许愿槽(余数也分配);许愿完成后按当前许愿列表顺序自动开启下一个未满级、未锁定、未运行的许愿 |
+| 自动许愿资源分配与续愿 | `[Wishes] AutoAllocate`(false) | 许愿按钮 **Shift+右键** 切换(浅蓝) | 每 1 秒检查一次;汇总当前运行许愿与空闲池中的三种资源后重新平均分配(各槽位最多相差 1);许愿完成后按当前许愿列表顺序自动开启下一个未满级、未锁定、未运行的许愿 |
+| 卡牌自动整理与自动出牌 | `[Cards] AutoCast.Enabled`(false);排序默认开启 | Cards 按钮 **Shift+右键** 切换自动出牌(浅蓝);卡牌界面 `S`=排序、`Y`=手动执行弃牌 | 自动排序/弃牌/保护 Chonker 沿用原版逻辑。自动出牌全局运行，每次检查最多一张，始终选择当前排序字段下的高优先级普通卡或 Chonker；跳过 `THE END` 与普通受保护卡。Chonker 保持保护直到被选中且蛋黄充足，出牌时临时解除保护；蛋黄不足时暂停无关生成器，只运行目标卡缺少的类型并在槽位不足时轮换；目标完成或自动出牌关闭后恢复之前的生成器状态 |
 | 自动合并/转化吊坠与 Looty | `[AutoMergeTransform] Enabled`(true) | — | 执行合并时自动把吊坠/Looty/Flubber 合成到最高级并转化为下一阶段物品(A9/lootz 除外),可一次跑多轮直至无可转化 |
 | 自动使用黄油 | `[Questing] AutoButter`(true) | 野兽任务界面"黄油"按钮 **Shift+右键** 切换(浅蓝) | 开始主线任务时自动使用黄油(有黄油、非挂机模式、未使用过黄油时) |
 | 自动手动主线任务 | 状态存入存档(无配置文件项) | 野兽按钮 **Shift+右键** 切换(浅蓝);普通**右键** = 收集任务物品 | 自动领取/完成手动主线任务:自动收集掉落、自动跳转任务区域、完成后自动接续下一个;取消勾选游戏内"使用主线"即停止。转生结算后若不再处于手动主线,自动关闭。**银行主线积攒达到阈值自动开跑**:关闭状态下积攒数达到存档键 `AutoQuestingStartThreshold`(默认 `0` = 跟随当前银行上限,攒满即触发;设 >0 可指定具体阈值)时自动开启并开始做主线,自动开启 beast、退出挂机模式并切换到主线;做到积攒数为 0 自动停止。右键显式关闭后不再自动开启,需手动重新打开 |
@@ -57,10 +58,26 @@
 | `[BloodMagic]` | `AutoCast` | `true` | 铁柱自动施法 |
 | `[AutoMergeTransform]` | `Enabled` | `true` | 吊坠/Looty 自动合并转化 |
 | `[AdvancedTraining]` | `AutoAllocateEnergy` | `true` | 高级训练与NGU之间自动切换能量 |
-| `[Wishes]` | `AutoAllocate` | `false` | 当前运行许愿的三种空闲资源平均分配;完成后自动开启下一个许愿 |
+| `[Wishes]` | `AutoAllocate` | `false` | 汇总当前运行许愿与空闲池中的三种资源后平均重分配;完成后自动开启下一个许愿 |
 | `[Performance]` | `FrameCheckInterval` | `60` | 帧轮询自动化之间的检查间隔(帧),用于高级训练、血魔法、钱坑/转盘、冒险和自动主线 |
 | `[Performance]` | `WishCheckIntervalSeconds` | `1` | `AutoWishes` 的真实时间检查间隔(秒) |
 | `[Questing]` | `AutoButter` | `true` | 主线任务自动黄油 |
+| `[Cards]` | `AutoCast.Enabled` | `false` | 全局自动出牌;每次帧轮询最多打出一张高优先级普通卡或 Chonker;跳过 `THE END` 与普通受保护卡 |
+| `[Cards]` | `AutoSort.Enabled` | `true` | 新增卡牌时自动排序;卡牌界面按 `S` 可手动排序 |
+| `[Cards]` | `AutoSort.By` | `RarityFirst` | `RarityFirst`、`TypeFirst`、`Efficiency` 或 `Variance` |
+| `[Cards]` | `AutoSort.Direction` | `Ascending` | 现有牌堆排序方向;自动出牌始终使用高优先级方向 |
+| `[Cards]` | `AutoYeet.Mode` | `Disabled` | `Disabled`、`Efficiency`、`Variance` 或 `Rarity` |
+| `[Cards]` | `AutoProtectChonkers` | `true` | 新生成 Chonker 卡自动保护 |
+
+
+### 卡牌自动化执行逻辑
+
+- **自动排序不是定时任务**。`AutoSort.Enabled=true` 时，新生成普通卡或 Chonker 卡会先执行自动弃牌，再按 `AutoSort.By` 与 `AutoSort.Direction` 排序;已有牌堆不会周期性重排。卡牌界面按 `S` 可立即排序，按 `Y` 可手动执行弃牌规则。
+- **自动出牌是定时检查**。`AutoCast.Enabled=true` 后全局运行，检查间隔使用 `[Performance] FrameCheckInterval`(默认 60 帧)，每次最多打出一张。
+- 自动出牌沿用 `AutoSort.By` 的比较字段，但始终按高优先级方向选择目标，不受 `AutoSort.Direction` 影响。`RarityFirst` 按稀有度、卡牌类型、效果值比较;`TypeFirst` 按卡牌类型、稀有度、效果值比较;`Efficiency` 和 `Variance` 使用卡牌对应指标。
+- 普通受保护卡与 `THE END` 不会自动打出。Chonker 会保持自动保护，直到它成为当前最高优先级目标且蛋黄酱足够;此时自动出牌流程临时解除保护并调用游戏原生出牌逻辑，打出失败则恢复保护。
+- 目标卡缺少蛋黄酱时，只运行目标卡缺少的类型;生成器槽位不足时按剩余缺口轮换。自动流程会暂存并恢复目标卡完成、目标改变或自动出牌关闭前的生成器运行状态。
+- 自动出牌不会自动解除普通卡的保护，也不会处理 `THE END`;这两个规则用于避免不可逆的误消费。
 
 ## 构建操作
 

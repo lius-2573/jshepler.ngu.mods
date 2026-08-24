@@ -29,6 +29,8 @@
         <Compile Include="AutoTransformPendantsAndLooties.cs" />
         <Compile Include="Heirloom.cs" />
         <Compile Include="AutoManualMajorQuesting.cs" />
+        <Compile Include="AutoCards.cs" />
+        <Compile Include="CardMetrics.cs" />
         <Compile Include="AutoButter.cs" />
         <Compile Include="AutoAdventure.cs" />
         <Compile Include="AutoAdvancedTrainingEnergy.cs" />

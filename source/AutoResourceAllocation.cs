@@ -51,7 +51,7 @@ namespace jshepler.ngu.mods
         private static void ButtonShower_Start_postfix(ButtonShower __instance)
         {
             AttachToggle(__instance.augmentation, Options.AutoAllocation.Augment);
-            AttachToggle(__instance.bloodMagic, Options.AutoAllocation.BloodMagic);
+            AttachToggle(__instance.bloodMagic, Options.AutoAllocation.BloodMagic, false);
             AttachToggle(__instance.wandoos, Options.AutoAllocation.Wandoos);
             AttachToggle(__instance.ngu, Options.AutoAllocation.NGU);
         }
@@ -60,12 +60,11 @@ namespace jshepler.ngu.mods
         private static void ButtonShower_updateButtons_postfix(ButtonShower __instance)
         {
             SetButtonColor(__instance.augmentation, Options.AutoAllocation.Augment.Value);
-            SetButtonColor(__instance.bloodMagic, Options.AutoAllocation.BloodMagic.Value);
             SetButtonColor(__instance.wandoos, Options.AutoAllocation.Wandoos.Value);
             SetButtonColor(__instance.ngu, Options.AutoAllocation.NGU.Value);
         }
 
-        private static void AttachToggle(Button button, ConfigEntry<bool> option)
+        private static void AttachToggle(Button button, ConfigEntry<bool> option, bool showColor = true)
         {
             if (button == null || option == null)
                 return;
@@ -79,10 +78,12 @@ namespace jshepler.ngu.mods
                     option.Value = !option.Value;
                     if (option.Value)
                         RequestCheck();
-                    SetButtonColor(button, option.Value);
+                    if (showColor)
+                        SetButtonColor(button, option.Value);
                 });
 
-            SetButtonColor(button, option.Value);
+            if (showColor)
+                SetButtonColor(button, option.Value);
         }
 
         private static void SetButtonColor(Button button, bool enabled)

@@ -12,6 +12,7 @@ namespace jshepler.ngu.mods
         private static readonly List<int> _runningWishIds = new();
         private static int _pendingWishSlots;
         private static float _lastCheckTime = float.NegativeInfinity;
+        private static bool _resourcesPrepared;
         private enum ResourceKind
         {
             Energy,
@@ -68,12 +69,6 @@ namespace jshepler.ngu.mods
         {
             SetButtonColor(__instance.wishes);
         }
-        [HarmonyPostfix, HarmonyPatch(typeof(WishesController), "updateAllWishes")]
-        private static void WishesController_updateAllWishes_postfix(WishesController __instance)
-        {
-            if (_enabled)
-                AutomationThrottle.Reset(ref _lastCheckTime);
-        }
 
 
         [HarmonyPostfix, HarmonyPatch(typeof(WishesController), "doLevelupEffect")]
@@ -93,16 +88,34 @@ namespace jshepler.ngu.mods
                 UpdateAllocation(Plugin.Character?.wishesController);
         }
 
+        internal static void PrepareForPriority()
+        {
+            _resourcesPrepared = false;
+            if (!_enabled)
+                return;
+
+            var controller = Plugin.Character?.wishesController;
+            if (!IsUsable(controller) || !controller.character.wishes.wishesOn
+                || !AutomationThrottle.ShouldRunEverySeconds(ref _lastCheckTime))
+                return;
+
+            CollectRunningWishes(controller);
+            ReleaseWishResources(controller.character);
+            _resourcesPrepared = true;
+        }
+
         private static void UpdateAllocation(WishesController controller)
         {
             if (!IsUsable(controller) || !controller.character.wishes.wishesOn)
                 return;
 
-            if (!AutomationThrottle.ShouldRunEverySeconds(ref _lastCheckTime))
+            var prepared = _resourcesPrepared;
+            _resourcesPrepared = false;
+            if (!prepared && !AutomationThrottle.ShouldRunEverySeconds(ref _lastCheckTime))
                 return;
 
             var started = TryStartPendingWishes(controller);
-            var changed = RebalanceResources(controller);
+            var changed = RebalanceResources(controller, prepared);
             if (started)
                 controller.updateMenu();
             else if (changed)
@@ -135,10 +148,28 @@ namespace jshepler.ngu.mods
                     _runningWishIds.Add(id);
             }
         }
-
-        private static bool RebalanceResources(WishesController controller)
+        private static void ReleaseWishResources(Character character)
         {
-            CollectRunningWishes(controller);
+            for (var index = 0; index < _runningWishIds.Count; index++)
+            {
+                var wish = character.wishes.wishes[_runningWishIds[index]];
+                var energy = wish.energy;
+                var magic = wish.magic;
+                var res3 = wish.res3;
+                wish.energy = 0L;
+                wish.magic = 0L;
+                wish.res3 = 0L;
+                character.idleEnergy = SaturatingAdd(character.idleEnergy, energy);
+                character.magic.idleMagic = SaturatingAdd(character.magic.idleMagic, magic);
+                character.res3.idleRes3 = SaturatingAdd(character.res3.idleRes3, res3);
+            }
+        }
+
+
+        private static bool RebalanceResources(WishesController controller, bool resourcesPrepared)
+        {
+            if (!resourcesPrepared)
+                CollectRunningWishes(controller);
             if (_runningWishIds.Count == 0)
                 return false;
 
@@ -330,6 +361,7 @@ namespace jshepler.ngu.mods
         private static void ResetState()
         {
             _pendingWishSlots = 0;
+            _resourcesPrepared = false;
             AutomationThrottle.Reset(ref _lastCheckTime);
             _energyRemainderStart = 0;
             _magicRemainderStart = 0;

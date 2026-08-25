@@ -105,6 +105,8 @@ namespace jshepler.ngu.mods
             if (character == null)
                 return;
 
+            AutoWishes.PrepareForPriority();
+            ReleaseManagedResources(character);
             var order = GetPriorityOrder();
             for (var index = 0; index < order.Length; index++)
             {
@@ -133,6 +135,192 @@ namespace jshepler.ngu.mods
                         break;
                 }
             }
+        }
+        private static void ReleaseManagedResources(Character character)
+        {
+            if (Options.AutoAllocation.Augment.Value)
+                ReleaseAugmentResources(character);
+            if (Options.AutoAllocation.BloodMagic.Value)
+                ReleaseBloodMagicResources(character);
+            if (AutoTimeMachineEnergy.Enabled)
+                ReleaseTimeMachineResources(character);
+            if (AutoAdvancedTrainingEnergy.Enabled)
+                ReleaseAdvancedTrainingResources(character);
+            if (Options.AutoAllocation.Wandoos.Value)
+                ReleaseWandoosResources(character);
+            if (Options.AutoAllocation.NGU.Value)
+                ReleaseNguResources(character);
+        }
+
+        private static void ReleaseAugmentResources(Character character)
+        {
+            if (character.augmentsController == null
+                || character.augmentsController.augments == null
+                || character.augments == null
+                || character.augments.augs == null)
+                return;
+
+            var controllers = character.augmentsController.augments;
+            var count = Math.Min(character.augments.augs.Length, controllers.Length);
+            for (var id = 0; id < count; id++)
+            {
+                var augment = character.augments.augs[id];
+                if (augment == null)
+                    continue;
+
+                var energy = augment.augEnergy;
+                var upgradeEnergy = augment.upgradeEnergy;
+                augment.augEnergy = 0L;
+                augment.upgradeEnergy = 0L;
+                AddIdleEnergy(character, energy);
+                AddIdleEnergy(character, upgradeEnergy);
+
+                var controller = controllers[id];
+                if (controller != null && (energy > 0L || upgradeEnergy > 0L))
+                {
+                    controller.updateAugTexts();
+                    controller.updateUpgradeTexts();
+                }
+            }
+        }
+
+        private static void ReleaseBloodMagicResources(Character character)
+        {
+            var controller = character.bloodMagicController;
+            if (controller == null || character.bloodMagic == null || character.bloodMagic.ritual == null)
+                return;
+
+            for (var id = 0; id < character.bloodMagic.ritual.Count; id++)
+            {
+                var ritual = character.bloodMagic.ritual[id];
+                if (ritual == null)
+                    continue;
+
+                var magic = ritual.magic;
+                ritual.magic = 0L;
+                AddIdleMagic(character, magic);
+
+                if (magic > 0L && controller.bloodMagics != null && id < controller.bloodMagics.Length
+                    && controller.bloodMagics[id] != null)
+                    controller.bloodMagics[id].updateBloodMagicText();
+            }
+        }
+
+        private static void ReleaseTimeMachineResources(Character character)
+        {
+            var controller = character.timeMachineController;
+            if (!AutoTimeMachineEnergy.IsUsable(controller))
+                return;
+
+            var speedEnergy = character.machine.speedEnergy;
+            var goldMultiMagic = character.machine.goldMultiMagic;
+            character.machine.speedEnergy = 0L;
+            character.machine.goldMultiMagic = 0L;
+            AddIdleEnergy(character, speedEnergy);
+            AddIdleMagic(character, goldMultiMagic);
+
+            if (speedEnergy > 0L)
+                controller.updateSpeedText();
+            if (goldMultiMagic > 0L)
+                controller.updateGoldMultiText();
+        }
+
+        private static void ReleaseAdvancedTrainingResources(Character character)
+        {
+            var allTraining = character.advancedTrainingController;
+            if (!AutoAdvancedTrainingEnergy.IsUsable(allTraining))
+                return;
+
+            for (var id = 0; id < allTraining.size(); id++)
+            {
+                var amount = character.advancedTraining.energy[id];
+                if (amount <= 0L)
+                    continue;
+
+                character.advancedTraining.energy[id] = 0L;
+                AddIdleEnergy(character, amount);
+                AutoAdvancedTrainingEnergy.GetController(allTraining, id)?.updateText();
+            }
+        }
+
+        private static void ReleaseWandoosResources(Character character)
+        {
+            if (character.wandoos98 == null)
+                return;
+
+            var energy = character.wandoos98.wandoosEnergy;
+            var magic = character.wandoos98.wandoosMagic;
+            character.wandoos98.wandoosEnergy = 0L;
+            character.wandoos98.wandoosMagic = 0L;
+            AddIdleEnergy(character, energy);
+            AddIdleMagic(character, magic);
+
+            if ((energy > 0L || magic > 0L) && character.wandoos98Controller != null)
+                character.wandoos98Controller.updateText();
+        }
+
+        private static void ReleaseNguResources(Character character)
+        {
+            var allNgu = character.NGUController;
+            if (allNgu == null || character.NGU == null)
+                return;
+
+            if (character.NGU.skills != null && allNgu.NGU != null)
+            {
+                var count = Math.Min(character.NGU.skills.Count, allNgu.NGU.Length);
+                for (var id = 0; id < count; id++)
+                {
+                    var skill = character.NGU.skills[id];
+                    if (skill == null)
+                        continue;
+
+                    var energy = skill.energy;
+                    skill.energy = 0L;
+                    AddIdleEnergy(character, energy);
+                    if (energy > 0L && allNgu.NGU[id] != null)
+                        allNgu.NGU[id].updateText();
+                }
+            }
+
+            if (character.NGU.magicSkills != null && allNgu.NGUMagic != null)
+            {
+                var count = Math.Min(character.NGU.magicSkills.Count, allNgu.NGUMagic.Length);
+                for (var id = 0; id < count; id++)
+                {
+                    var skill = character.NGU.magicSkills[id];
+                    if (skill == null)
+                        continue;
+
+                    var magic = skill.magic;
+                    skill.magic = 0L;
+                    AddIdleMagic(character, magic);
+                    if (magic > 0L && allNgu.NGUMagic[id] != null)
+                        allNgu.NGUMagic[id].updateText();
+                }
+            }
+        }
+
+        private static void AddIdleEnergy(Character character, long amount)
+        {
+            if (amount <= 0L)
+                return;
+            character.idleEnergy = SaturatingAdd(character.idleEnergy, amount);
+        }
+
+        private static void AddIdleMagic(Character character, long amount)
+        {
+            if (amount <= 0L || character.magic == null)
+                return;
+            character.magic.idleMagic = SaturatingAdd(character.magic.idleMagic, amount);
+        }
+
+        private static long SaturatingAdd(long left, long right)
+        {
+            if (right <= 0L)
+                return left;
+            if (left >= long.MaxValue - right)
+                return long.MaxValue;
+            return left + right;
         }
 
         private static Feature[] GetPriorityOrder()
@@ -203,21 +391,88 @@ namespace jshepler.ngu.mods
             for (var id = 0; id < count; id++)
             {
                 var controller = controllers[id];
-                if (controller == null || controller.augLocked() || controller.hitAugmentTarget())
-                    continue;
-
-                var cap = CapFromProgress(controller.getAugProgressPerTick(1L));
                 var augment = character.augments.augs[id];
-                if (augment == null)
+                if (controller == null || augment == null)
                     continue;
 
-                var amount = TakeEnergy(character, augment.augEnergy, cap, true);
-                if (amount <= 0)
-                    continue;
+                var changed = false;
+                if (!controller.augLocked() && !controller.hitAugmentTarget())
+                {
+                    var amount = TakeEnergy(
+                        character,
+                        augment.augEnergy,
+                        AugmentCapForNextLevel(character, controller, false),
+                        true);
+                    if (amount > 0L)
+                    {
+                        augment.augEnergy += amount;
+                        changed = true;
+                    }
+                }
 
-                augment.augEnergy += amount;
-                controller.updateAugTexts();
+                if (!controller.upgradeLocked() && !controller.hitUpgradeTarget())
+                {
+                    var amount = TakeEnergy(
+                        character,
+                        augment.upgradeEnergy,
+                        AugmentCapForNextLevel(character, controller, true),
+                        true);
+                    if (amount > 0L)
+                    {
+                        augment.upgradeEnergy += amount;
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                {
+                    controller.updateAugTexts();
+                    controller.updateUpgradeTexts();
+                }
             }
+        }
+
+        private static long AugmentCapForNextLevel(Character character, AugmentController controller, bool upgrade)
+        {
+            var id = controller.id;
+            var augment = character.augments.augs[id];
+            var level = (upgrade ? augment.upgradeLevel : augment.augLevel) + 1d;
+            var rebirthDifficulty = character.settings.rebirthDifficulty;
+            var divider = rebirthDifficulty switch
+            {
+                difficulty.normal => upgrade
+                    ? character.augmentsController.normalUpgradeSpeedDividers[id]
+                    : character.augmentsController.normalAugSpeedDividers[id],
+                difficulty.evil => upgrade
+                    ? character.augmentsController.evilUpgradeSpeedDividers[id]
+                    : character.augmentsController.evilAugSpeedDividers[id],
+                difficulty.sadistic => upgrade
+                    ? character.augmentsController.sadisticUpgradeSpeedDividers[id]
+                    : character.augmentsController.sadisticAugSpeedDividers[id],
+                _ => 0f
+            };
+
+            var power = (double)character.totalEnergyPower();
+            var speedBonus = (double)(1f + character.inventoryController.bonuses[specType.Augs])
+                * character.inventory.macguffinBonuses[12]
+                * character.hacksController.totalAugSpeedBonus()
+                * character.adventureController.itopod.totalAugSpeedBonus()
+                * character.cardsController.getBonus(cardBonus.augSpeed)
+                * (1d + character.allChallenges.noAugsChallenge.evilCompletions() * 0.05d);
+            if (character.allChallenges.noAugsChallenge.completions() >= 1)
+                speedBonus *= 1.100000023841858d;
+            if (character.allChallenges.noAugsChallenge.evilCompletions()
+                >= character.allChallenges.noAugsChallenge.maxCompletions)
+                speedBonus *= 1.25d;
+
+            if (power <= 0d || speedBonus <= 0d || divider <= 0f || level <= 0d)
+                return 0L;
+
+            var scale = rebirthDifficulty >= difficulty.sadistic
+                ? (double)controller.sadisticDivider()
+                : 50000d;
+            var cap = scale * divider * level / (power * speedBonus) * 1.000002d;
+            return CapFromDouble(cap);
         }
 
         private static void AllocateBloodMagic(Character character)
@@ -396,19 +651,15 @@ namespace jshepler.ngu.mods
             }
         }
 
-        private static long CapFromProgress(float progressPerUnit)
+        private static long CapFromDouble(double cap)
         {
-            if (float.IsNaN(progressPerUnit) || progressPerUnit <= 0f)
+            if (cap <= 0d || double.IsNaN(cap))
                 return 0L;
-            if (float.IsInfinity(progressPerUnit))
-                return 1L;
-
-            var cap = Math.Ceiling(1.000002d / progressPerUnit);
-            if (cap >= long.MaxValue)
+            if (double.IsInfinity(cap) || cap >= long.MaxValue)
                 return long.MaxValue;
-            if (cap < 1d)
-                return 1L;
-            return (long)cap;
+
+            var result = (long)cap;
+            return result < long.MaxValue ? result + 1L : long.MaxValue;
         }
 
         private static long TakeEnergy(Character character, long current, long cap, bool fromNgu)

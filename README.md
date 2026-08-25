@@ -27,13 +27,16 @@
 | 自动收割/食用 Yggdrasil 果实 | `[Yggdrasil] AutoHarvest`(true) | Yggdrasil 按钮 **Shift+右键** 切换(变浅蓝) | 任一果实达到最高等级时自动全部食用;转生时自动收获/食用 ≥1 级果实(此项常驻,不受开关控制) |
 | 钱坑自动投金币 | `[MoneyPit] AutoToss`(true) | 钱坑按钮 **Shift+右键** 切换(浅蓝) | 钱坑冷却结束(`canToss`)即自动投入金币并弹出提示 |
 | 每日转盘自动转 | `[DailySpin] AutoSpin`(true) | 钱坑按钮 **Alt+右键** 切换(绿色) | 每日转盘就绪(`canSpin`)即自动转动并弹出结果提示 |
-| 血魔法自动施铁柱 | `[BloodMagic] AutoCast`(true) | 血魔法按钮 **Shift+右键** 切换(浅蓝) | 击败 boss 37 解锁后,冒险法术冷却结束即自动施放铁柱(Iron Pill);金币/掉落/重生法术仍由游戏原生复选框控制,本功能不干预 |
-| 高级训练自动切换能量 | `[AdvancedTraining] AutoAllocateEnergy`(true) | 高级训练按钮 **Shift+右键** 切换(浅蓝) | 高级训练解锁后，所有未完成的训练同时分配下一级100%等级上限能量;不足时从NGU能量释放;任一训练完成后将该训练能量自动转回仍在运行的NGU |
+| 血魔法自动施铁柱 | `[BloodMagic] AutoCast`(true) | Iron Pill 按钮 **Shift+右键** 切换(浅蓝) | 击败 boss 37 解锁后,冒险法术冷却结束即自动施放铁柱(Iron Pill);金币/掉落/重生法术仍由游戏原生复选框控制,本功能不干预 |
+| 时光机器自动分配能量/魔力 | `[TimeMachine] AutoAllocateEnergy`(true) | 时光机器按钮 **Shift+右键** 切换(浅蓝) | 时光机器解锁后，速度与金币倍增两条进度分别自动分配达到下一等级所需的能量/魔力;分别优先取空闲池，不足时从对应 NGU 释放，达到目标后停止重新分配 |
+| 高级训练自动切换能量 | `[AdvancedTraining] AutoAllocateEnergy`(true) | 高级训练按钮 **Shift+右键** 切换(浅蓝) | 高级训练解锁后，所有未完成训练分配下一级100%等级上限能量;完成的训练能量回到全局空闲池 |
+| 多资源自动上限分配 | `[AutoAllocation]`(true) | 挂件、血魔法、Wandoos、NGU 菜单按钮 **Shift+右键** 分别切换(浅蓝) | 挂件能量、血魔法魔力、时光机器能量/魔力、高级训练、Wandoos能量/魔力、NGU能量/魔力和自动许愿按 `Priority` 顺序处理;自动许愿同时处理能量、魔力和第三类资源(Res3) |
 | 自动许愿资源分配与续愿 | `[Wishes] AutoAllocate`(false) | 许愿按钮 **Shift+右键** 切换(浅蓝) | 每 1 秒检查一次;汇总当前运行许愿与空闲池中的三种资源后重新平均分配(各槽位最多相差 1);许愿完成后按当前许愿列表顺序自动开启下一个未满级、未锁定、未运行的许愿 |
 | 卡牌自动整理与自动出牌 | `[Cards] AutoCast.Enabled`(false);排序默认开启 | Cards 按钮 **Shift+右键** 切换自动出牌(浅蓝);卡牌界面 `S`=排序、`Y`=手动执行弃牌 | 自动排序/弃牌/保护 Chonker 沿用原版逻辑。自动出牌全局运行，每次检查最多一张，始终选择当前排序字段下的高优先级普通卡或 Chonker；跳过 `THE END` 与普通受保护卡。Chonker 保持保护直到被选中且蛋黄充足，出牌时临时解除保护；蛋黄不足时暂停无关生成器，只运行目标卡缺少的类型并在槽位不足时轮换；目标完成或自动出牌关闭后恢复之前的生成器状态 |
 | 自动合并/转化吊坠与 Looty | `[AutoMergeTransform] Enabled`(true) | — | 执行合并时自动把吊坠/Looty/Flubber 合成到最高级并转化为下一阶段物品(A9/lootz 除外),可一次跑多轮直至无可转化 |
 | 自动使用黄油 | `[Questing] AutoButter`(true) | 野兽任务界面"黄油"按钮 **Shift+右键** 切换(浅蓝) | 开始主线任务时自动使用黄油(有黄油、非挂机模式、未使用过黄油时) |
 | 自动手动主线任务 | 状态存入存档(无配置文件项) | 野兽按钮 **Shift+右键** 切换(浅蓝);普通**右键** = 收集任务物品 | 自动领取/完成手动主线任务:自动收集掉落、自动跳转任务区域、完成后自动接续下一个;取消勾选游戏内"使用主线"即停止。转生结算后若不再处于手动主线,自动关闭。**银行主线积攒达到阈值自动开跑**:关闭状态下积攒数达到存档键 `AutoQuestingStartThreshold`(默认 `0` = 跟随当前银行上限,攒满即触发;设 >0 可指定具体阈值)时自动开启并开始做主线,自动开启 beast、退出挂机模式并切换到主线;做到积攒数为 0 自动停止。右键显式关闭后不再自动开启,需手动重新打开 |
+| 掘金者自动载入已保存方案 | `[GoldDiggers] AutoLoadSaved`(true) | 掘金者按钮 **Shift+右键** 切换(浅蓝) | 读档、离线结算和转生后自动应用游戏内“已保存的掘金者”;等待金币产出可用后重试 |
 | 自动回到冒险区域 | 状态与目标区域存入存档(无配置文件项) | 主菜单"冒险"按钮 **Shift+右键** 切换(浅蓝) | 在目标冒险区域中开启即锁定该区域;在该区域战败被送回安全区、HP 恢复满后自动回到该区域继续自动战斗。开启状态下在冒险界面下拉框切换区域会自动更新目标。ITOPOD 不适用(战败不送安全区);转生、离线结算后不会自动拉人回冒险 |
 
 ### 常驻增强(加载即生效)
@@ -57,9 +60,16 @@
 | `[DailySpin]` | `AutoSpin` | `true` | 每日转盘自动转 |
 | `[BloodMagic]` | `AutoCast` | `true` | 铁柱自动施法 |
 | `[AutoMergeTransform]` | `Enabled` | `true` | 吊坠/Looty 自动合并转化 |
-| `[AdvancedTraining]` | `AutoAllocateEnergy` | `true` | 高级训练与NGU之间自动切换能量 |
-| `[Wishes]` | `AutoAllocate` | `false` | 汇总当前运行许愿与空闲池中的三种资源后平均重分配;完成后自动开启下一个许愿 |
-| `[Performance]` | `FrameCheckInterval` | `60` | 帧轮询自动化之间的检查间隔(帧),用于高级训练、血魔法、钱坑/转盘、冒险和自动主线 |
+| `[AutoAllocation]` | `Priority` | `Augment,BloodMagic,TimeMachine,AdvancedTraining,Wandoos,NGU,Wishes` | 全局资源分配顺序;缺少或重复项会自动补齐默认顺序 |
+| `[AutoAllocation]` | `Augment` | `true` | 挂件能量自动分配 |
+| `[AutoAllocation]` | `BloodMagic` | `true` | 血魔法仪式魔力自动分配 |
+| `[AutoAllocation]` | `Wandoos` | `true` | Wandoos 能量和魔力自动分配 |
+| `[AutoAllocation]` | `NGU` | `true` | NGU 能量和魔力自动分配 |
+| `[TimeMachine]` | `AutoAllocateEnergy` | `true` | 时光机器能量和魔力自动分配 |
+| `[AdvancedTraining]` | `AutoAllocateEnergy` | `true` | 高级训练能量自动分配 |
+| `[Wishes]` | `AutoAllocate` | `false` | 汇总运行许愿与空闲池中的能量、魔力和 Res3 后平均重分配;完成后自动开启下一个许愿 |
+| `[GoldDiggers]` | `AutoLoadSaved` | `true` | 自动应用已保存的掘金者 |
+| `[Performance]` | `FrameCheckInterval` | `60` | 帧轮询自动化之间的检查间隔(帧),用于多资源分配、血魔法、钱坑/转盘、冒险和自动主线 |
 | `[Performance]` | `WishCheckIntervalSeconds` | `1` | `AutoWishes` 的真实时间检查间隔(秒) |
 | `[Questing]` | `AutoButter` | `true` | 主线任务自动黄油 |
 | `[Cards]` | `AutoCast.Enabled` | `false` | 全局自动出牌;每次帧轮询最多打出一张高优先级普通卡或 Chonker;跳过 `THE END` 与普通受保护卡 |
@@ -69,6 +79,11 @@
 | `[Cards]` | `AutoYeet.Mode` | `Disabled` | `Disabled`、`Efficiency`、`Variance` 或 `Rarity` |
 | `[Cards]` | `AutoProtectChonkers` | `true` | 新生成 Chonker 卡自动保护 |
 
+### 自动化检查间隔
+
+- `[Performance] FrameCheckInterval` 默认 `60`,表示帧数而不是固定秒数;多资源上限分配、Iron Pill、掘金者载入及其他帧轮询功能都使用此间隔。
+- `[Performance] WishCheckIntervalSeconds` 默认 `1`,自动许愿使用真实时间间隔,同时处理能量、魔力和 `Res3`。
+- 配置文件修改需要重启游戏;Shift+右键切换开关会立即生效并重置对应检查计时器。
 
 ### 卡牌自动化执行逻辑
 
@@ -105,13 +120,14 @@ dotnet build source\jshepler.ngu.mods.csproj -c Release -p:GameFolder="C:\Progra
 ### 构建产物与部署
 
 - 产物:`source\bin\Release\net48\jshepler.ngu.mods.dll`
+- 发布副本:`release\jshepler.ngu.mods-1.30.1.dll`
 - 部署:项目含 `CopyDLL` 构建目标,构建成功后**自动复制**到 `$(GameFolder)\BepInEx\plugins\jshepler.ngu.mods.dll`,即游戏内生效位置(会覆盖同名旧 dll,见下方 dll 位置示意)
 
 ![dll 放置位置](dll.png)
 
 ### 构建验证
 
-1. 构建成功(0 错误;`NumberFormating.cs` 的 6 条 Harmony003 警告为既有警告,不影响功能)
+1. 构建成功(0 错误;仅有 `NumberFormating.cs` 的既有 Harmony003 警告,不影响功能)
 2. 启动游戏,检查 `BepInEx\LogOutput.log`,应出现:
    - `Loading [jshepler.ngu.mods 1.30.1]`
    - `Plugin jshepler.ngu.mods is loaded!`

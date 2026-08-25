@@ -9,6 +9,12 @@ namespace jshepler.ngu.mods
         internal static void Init(ConfigFile Config)
         {
             AdvancedTraining.AutoAllocateEnergy = Config.Bind("AdvancedTraining", "AutoAllocateEnergy", true, "automatically allocate 100% next-level energy to advanced training and return it to NGU when the target is reached");
+            TimeMachine.AutoAllocateEnergy = Config.Bind("TimeMachine", "AutoAllocateEnergy", true, "automatically allocate 100% next-level energy to time machine speed and magic, taking resources from idle pools and NGUs");
+            AutoAllocation.Priority = Config.Bind("AutoAllocation", "Priority", "Augment,BloodMagic,TimeMachine,AdvancedTraining,Wandoos,NGU,Wishes", "allocation order; valid values: Augment, BloodMagic, TimeMachine, AdvancedTraining, Wandoos, NGU, Wishes");
+            AutoAllocation.Augment = Config.Bind("AutoAllocation", "Augment", true, "automatically fill unlocked augment energy to the next-level cap");
+            AutoAllocation.BloodMagic = Config.Bind("AutoAllocation", "BloodMagic", true, "automatically fill unlocked blood ritual magic to the cap");
+            AutoAllocation.Wandoos = Config.Bind("AutoAllocation", "Wandoos", true, "automatically fill Wandoos energy and magic to their caps");
+            AutoAllocation.NGU = Config.Bind("AutoAllocation", "NGU", true, "automatically fill NGU energy and magic to their next-level caps");
             Yggdrasil.AutoHarvest = Config.Bind("Yggdrasil", "AutoHarvest", true, "enable auto harvest/eat fruits when fully grown (max tier)");
             Wishes.AutoAllocate = Config.Bind("Wishes", "AutoAllocate", false, "at the configured interval, split idle energy, magic, and res3 between running wishes and start the next wish when one completes");
             AutoMergeTransform.Enabled = Config.Bind("AutoMergeTransform", "Enabled", true, "enables/disables auto merging and transforming of pendants and looties");
@@ -17,6 +23,7 @@ namespace jshepler.ngu.mods
             MoneyPit.AutoToss = Config.Bind("MoneyPit", "AutoToss", true, "automatically toss gold into the money pit as soon as it's ready");
             DailySpin.AutoSpin = Config.Bind("DailySpin", "AutoSpin", true, "automatically spin the daily wheel as soon as it's ready");
             BloodMagic.AutoCast = Config.Bind("BloodMagic", "AutoCast", true, "automatically cast Iron Pill as soon as it's ready (gold/loot/rebirth spells have their own vanilla auto-cast checkboxes, which this leaves untouched)");
+            GoldDiggers.AutoLoadSaved = Config.Bind("GoldDiggers", "AutoLoadSaved", true, "automatically apply the saved digger loadout after loading a save and after rebirth");
             Performance.FrameCheckInterval = Config.Bind("Performance", "FrameCheckInterval", 60, "number of rendered frames between checks for frame-based automation");
             Performance.WishCheckIntervalSeconds = Config.Bind("Performance", "WishCheckIntervalSeconds", 1f, "seconds between AutoWishes checks");
             Cards.AutoSortEnabled = Config.Bind("Cards", "AutoSort.Enabled", true, "if enabled, sorts cards as they are added");
@@ -65,6 +72,25 @@ namespace jshepler.ngu.mods
         internal static class AdvancedTraining
         {
             internal static ConfigEntry<bool> AutoAllocateEnergy;
+        }
+
+        internal static class TimeMachine
+        {
+            internal static ConfigEntry<bool> AutoAllocateEnergy;
+        }
+
+        internal static class AutoAllocation
+        {
+            internal static ConfigEntry<string> Priority;
+            internal static ConfigEntry<bool> Augment;
+            internal static ConfigEntry<bool> BloodMagic;
+            internal static ConfigEntry<bool> Wandoos;
+            internal static ConfigEntry<bool> NGU;
+        }
+
+        internal static class GoldDiggers
+        {
+            internal static ConfigEntry<bool> AutoLoadSaved;
         }
 
         internal static class BloodMagic

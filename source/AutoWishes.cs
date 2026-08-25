@@ -49,7 +49,7 @@ namespace jshepler.ngu.mods
                     if (_enabled)
                     {
                         AutomationThrottle.Reset(ref _lastCheckTime);
-                        UpdateAllocation();
+                        AutoResourceAllocation.RequestCheck();
                     }
                     else
                     {
@@ -58,7 +58,6 @@ namespace jshepler.ngu.mods
                     }
                 });
 
-            Plugin.OnUpdate += (o, e) => UpdateAllocation();
             Plugin.OnGameStart += (o, e) => ResetState();
             Plugin.OnSaveLoaded += (o, e) => ResetState();
             SetButtonColor(button);
@@ -73,7 +72,7 @@ namespace jshepler.ngu.mods
         private static void WishesController_updateAllWishes_postfix(WishesController __instance)
         {
             if (_enabled)
-                UpdateAllocation(__instance);
+                AutomationThrottle.Reset(ref _lastCheckTime);
         }
 
 
@@ -88,12 +87,10 @@ namespace jshepler.ngu.mods
                 _pendingWishSlots++;
         }
 
-        private static void UpdateAllocation()
+        internal static void UpdateAllocationForPriority()
         {
-            if (!_enabled)
-                return;
-
-            UpdateAllocation(Plugin.Character?.wishesController);
+            if (_enabled)
+                UpdateAllocation(Plugin.Character?.wishesController);
         }
 
         private static void UpdateAllocation(WishesController controller)

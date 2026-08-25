@@ -7,12 +7,17 @@ namespace jshepler.ngu.mods
     [HarmonyPatch]
     internal static class AutoAdvancedTrainingEnergy
     {
-        private static int _lastCheckFrame = -1;
 
-        private static bool _enabled
+        internal static bool Enabled
         {
             get => Options.AdvancedTraining.AutoAllocateEnergy.Value;
             set => Options.AdvancedTraining.AutoAllocateEnergy.Value = value;
+        }
+
+        private static bool _enabled
+        {
+            get => Enabled;
+            set => Enabled = value;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ButtonShower), "Start")]
@@ -26,11 +31,11 @@ namespace jshepler.ngu.mods
 
                     _enabled = !_enabled;
                     if (_enabled)
-                        AutomationThrottle.Reset(ref _lastCheckFrame);
+                        AutoResourceAllocation.RequestCheck();
                     SetButtonColor(__instance.advancedTraining);
                 });
 
-            Plugin.OnUpdate += (o, e) => UpdateAllocation();
+            // Allocation is coordinated by AutoResourceAllocation so feature priorities apply globally.
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ButtonShower), "updateButtons")]
@@ -39,8 +44,8 @@ namespace jshepler.ngu.mods
             SetButtonColor(__instance.advancedTraining);
         }
 
-        // The game's auto-advance would move completed AT energy to another AT bar.
-        // Intercept it so completed training energy can be returned to NGU instead.
+        // Return completed training energy to the idle pool so the global scheduler
+        // can give it to the configured next-priority feature.
         [HarmonyPrefix, HarmonyPatch(typeof(AllAdvancedTraining), "advanceEnergy")]
         private static bool AllAdvancedTraining_advanceEnergy_prefix(AllAdvancedTraining __instance, int id)
         {
@@ -51,30 +56,8 @@ namespace jshepler.ngu.mods
             return false;
         }
 
-        private static void UpdateAllocation()
-        {
-            if (!_enabled)
-                return;
 
-            if (!AutomationThrottle.ShouldRunEveryFrames(ref _lastCheckFrame))
-                return;
-
-            var character = Plugin.Character;
-            var allTraining = character?.advancedTrainingController;
-            if (!IsUsable(allTraining))
-                return;
-
-            // Process every unlocked AT bar in the same update, rather than selecting one active bar.
-            for (var id = 0; id < allTraining.size(); id++)
-            {
-                if (allTraining.reachedTarget(id))
-                    ReturnTrainingEnergy(character, id);
-                else
-                    AllocateTrainingCap(character, allTraining, id);
-            }
-        }
-
-        private static bool IsUsable(AllAdvancedTraining allTraining)
+        internal static bool IsUsable(AllAdvancedTraining allTraining)
         {
             if (allTraining == null || allTraining.character == null || !allTraining.advancedTrainingUnlocked())
                 return false;
@@ -85,7 +68,7 @@ namespace jshepler.ngu.mods
                 && character.advancedTraining != null;
         }
 
-        private static AdvancedTrainingController GetController(AllAdvancedTraining allTraining, int id)
+        internal static AdvancedTrainingController GetController(AllAdvancedTraining allTraining, int id)
         {
             return id switch
             {
@@ -98,34 +81,8 @@ namespace jshepler.ngu.mods
             };
         }
 
-        private static void AllocateTrainingCap(Character character, AllAdvancedTraining allTraining, int id)
-        {
-            var controller = GetController(allTraining, id);
-            if (controller == null || controller.baseTime <= 0f)
-                return;
 
-            var currentEnergy = character.advancedTraining.energy[id];
-            var cap = TrainingCapForNextLevel(character, controller);
-            if (cap <= currentEnergy)
-                return;
-
-            var needed = cap - currentEnergy;
-            var fromIdle = Math.Min(needed, Math.Max(character.idleEnergy, 0L));
-            character.idleEnergy -= fromIdle;
-            needed -= fromIdle;
-
-            if (needed > 0)
-                needed -= ReleaseFromNgu(character, needed);
-
-            var allocated = cap - currentEnergy - needed;
-            if (allocated <= 0)
-                return;
-
-            character.advancedTraining.energy[id] += allocated;
-            controller.updateText();
-        }
-
-        private static long TrainingCapForNextLevel(Character character, AdvancedTrainingController controller)
+        internal static long TrainingCapForNextLevel(Character character, AdvancedTrainingController controller)
         {
             var power = (double)character.totalEnergyPower();
             var speedBonus = (double)character.totalAdvancedTrainingSpeedBonus();
@@ -142,35 +99,8 @@ namespace jshepler.ngu.mods
             return (long)cap;
         }
 
-        private static long ReleaseFromNgu(Character character, long amount)
-        {
-            var released = 0L;
-            var nguControllers = character.NGUController.NGU;
-            var count = Math.Min(character.NGU.skills.Count, nguControllers.Length);
 
-            // Prefer NGUs that are still running; only drain reached targets as a last resort.
-            for (var pass = 0; pass < 2 && released < amount; pass++)
-            {
-                for (var id = 0; id < count && released < amount; id++)
-                {
-                    if (nguControllers[id] == null || (pass == 0 && character.NGUController.reachedTarget(id)))
-                        continue;
-
-                    var available = character.NGU.skills[id].energy;
-                    var take = Math.Min(amount - released, Math.Max(available, 0L));
-                    if (take <= 0)
-                        continue;
-
-                    character.NGU.skills[id].energy -= take;
-                    released += take;
-                    nguControllers[id].refresh();
-                }
-            }
-
-            return released;
-        }
-
-        private static void ReturnTrainingEnergy(Character character, int id)
+        internal static void ReturnTrainingEnergy(Character character, int id)
         {
             if (id < 0 || id >= character.advancedTraining.energy.Length)
                 return;
@@ -182,24 +112,6 @@ namespace jshepler.ngu.mods
             character.advancedTraining.energy[id] = 0L;
             character.idleEnergy += amount;
 
-            var nguControllers = character.NGUController.NGU;
-            var count = Math.Min(character.NGU.skills.Count, nguControllers.Length);
-            var targetId = -1;
-            for (var nguId = 0; nguId < count; nguId++)
-            {
-                if (nguControllers[nguId] != null && !character.NGUController.reachedTarget(nguId))
-                {
-                    targetId = nguId;
-                    break;
-                }
-            }
-
-            if (targetId >= 0)
-            {
-                character.NGU.skills[targetId].energy += amount;
-                character.idleEnergy -= amount;
-                nguControllers[targetId].refresh();
-            }
 
             var controller = GetController(character.advancedTrainingController, id);
             controller?.updateText();

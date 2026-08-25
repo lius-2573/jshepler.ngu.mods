@@ -34,6 +34,9 @@
         <Compile Include="AutoButter.cs" />
         <Compile Include="AutoAdventure.cs" />
         <Compile Include="AutoAdvancedTrainingEnergy.cs" />
+        <Compile Include="AutoTimeMachineEnergy.cs" />
+        <Compile Include="AutoResourceAllocation.cs" />
+        <Compile Include="AutoLoadSavedDiggers.cs" />
         <Compile Include="AutoWishes.cs" />
         <Compile Include="AutomationThrottle.cs" />
         <Compile Include="GameData\Fruits.cs" />

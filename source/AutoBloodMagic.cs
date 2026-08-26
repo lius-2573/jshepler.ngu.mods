@@ -40,6 +40,14 @@ namespace jshepler.ngu.mods
                     SetBloodMagicButtonColor(button);
                 });
 
+            Plugin.OnUpdate += (o, e) =>
+            {
+                if (!_enabled || !AutomationThrottle.ShouldRunEveryFrames(ref _lastCheckFrame))
+                    return;
+
+                castReadySpells();
+            };
+
             SetBloodMagicButtonColor(button);
         }
 

@@ -10,7 +10,6 @@ namespace jshepler.ngu.mods
     internal static class AutoWishes
     {
         private static readonly List<int> _runningWishIds = new();
-        private static int _pendingWishSlots;
         private static float _lastCheckTime = float.NegativeInfinity;
         private static bool _resourcesPrepared;
         private enum ResourceKind
@@ -54,7 +53,6 @@ namespace jshepler.ngu.mods
                     }
                     else
                     {
-                        _pendingWishSlots = 0;
                         AutomationThrottle.Reset(ref _lastCheckTime);
                     }
                 });
@@ -79,10 +77,7 @@ namespace jshepler.ngu.mods
 
             var wish = __instance.character.wishes.wishes[id];
             if (level >= __instance.maxWishLevel(id) && IsRunning(wish))
-            {
-                _pendingWishSlots++;
                 RecycleWishResources(__instance.character, wish);
-            }
         }
 
         internal static void UpdateAllocationForPriority()
@@ -298,13 +293,12 @@ namespace jshepler.ngu.mods
         private static bool TryStartPendingWishes(WishesController controller)
         {
             var started = false;
-            while (_pendingWishSlots > 0 && CountRunningWishes(controller) < controller.curWishSlots())
+            while (CountRunningWishes(controller) < controller.curWishSlots())
             {
                 var nextId = FindNextWish(controller);
                 if (nextId < 0 || !SeedWish(controller, nextId))
                     break;
 
-                _pendingWishSlots--;
                 started = true;
             }
 
@@ -376,7 +370,6 @@ namespace jshepler.ngu.mods
 
         private static void ResetState()
         {
-            _pendingWishSlots = 0;
             _resourcesPrepared = false;
             AutomationThrottle.Reset(ref _lastCheckTime);
             _energyRemainderStart = 0;

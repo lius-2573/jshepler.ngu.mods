@@ -77,9 +77,12 @@ namespace jshepler.ngu.mods
             if (!_enabled || !IsUsable(__instance) || !__instance.character.wishes.wishesOn)
                 return;
 
-            if (level >= __instance.maxWishLevel(id)
-                && IsRunning(__instance.character.wishes.wishes[id]))
+            var wish = __instance.character.wishes.wishes[id];
+            if (level >= __instance.maxWishLevel(id) && IsRunning(wish))
+            {
                 _pendingWishSlots++;
+                RecycleWishResources(__instance.character, wish);
+            }
         }
 
         internal static void UpdateAllocationForPriority()
@@ -163,6 +166,19 @@ namespace jshepler.ngu.mods
                 character.magic.idleMagic = SaturatingAdd(character.magic.idleMagic, magic);
                 character.res3.idleRes3 = SaturatingAdd(character.res3.idleRes3, res3);
             }
+        }
+
+        private static void RecycleWishResources(Character character, Wish wish)
+        {
+            var energy = wish.energy;
+            var magic = wish.magic;
+            var res3 = wish.res3;
+            wish.energy = 0L;
+            wish.magic = 0L;
+            wish.res3 = 0L;
+            character.idleEnergy = SaturatingAdd(character.idleEnergy, energy);
+            character.magic.idleMagic = SaturatingAdd(character.magic.idleMagic, magic);
+            character.res3.idleRes3 = SaturatingAdd(character.res3.idleRes3, res3);
         }
 
 
@@ -301,7 +317,7 @@ namespace jshepler.ngu.mods
             var wishes = controller.character.wishes.wishes;
             for (var id = 0; id < wishes.Count; id++)
             {
-                if (IsRunning(wishes[id]))
+                if (IsRunning(wishes[id]) && wishes[id].level < controller.maxWishLevel(id))
                     count++;
             }
 

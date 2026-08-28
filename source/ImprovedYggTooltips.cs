@@ -20,24 +20,36 @@ namespace jshepler.ngu.mods
         {
             _fruitId = fruitID;
         }
+        [HarmonyFinalizer, HarmonyPatch(typeof(FruitController), "consumeFruit", typeof(int)), HarmonyPatch(typeof(FruitController), "harvest", typeof(int))]
+        private static void FruitController_consumeFruit_int_finalizer()
+        {
+            _fruitId = -1;
+        }
 
         [HarmonyPrefix, HarmonyPatch(typeof(TooltipLog), "AddEvent")]
         private static void TooltipLog_AddEvent_prefix(string eventString)
         {
-            if (_fruitId == -1) return;
-
-            _texts[_fruitId] = eventString;
+            var fruitId = _fruitId;
             _fruitId = -1;
+            if (fruitId < 0)
+                return;
+
+            var texts = _texts;
+            if (texts == null || fruitId >= texts.Length)
+                return;
+
+            texts[fruitId] = eventString;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(FruitController), "showTooltip")]
         private static void FruitController_showTooltip_postfix(FruitController __instance, ref string ___message)
         {
             var fruitId = __instance.id;
-            if (fruitId < 0 || fruitId >= _texts.Length)
+            var texts = _texts;
+            if (fruitId < 0 || texts == null || fruitId >= texts.Length)
                 return;
 
-            var text = _texts[fruitId];
+            var text = texts[fruitId];
             if (!__instance.validID(fruitId) || string.IsNullOrEmpty(text))
                 return;
 

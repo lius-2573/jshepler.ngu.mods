@@ -9,6 +9,7 @@ namespace jshepler.ngu.mods
     internal class AutoBloodMagic
     {
         private static int _lastCheckFrame = -1;
+        private static bool _eventsRegistered;
         private static bool _enabled
         {
             get => Options.BloodMagic.AutoCast.Value;
@@ -24,6 +25,8 @@ namespace jshepler.ngu.mods
         [HarmonyPostfix, HarmonyPatch(typeof(ButtonShower), "Start")]
         private static void ButtonShower_Start_postfix(ButtonShower __instance)
         {
+            RegisterEvents();
+
             var button = __instance.bloodMagic;
             if (button == null)
                 return;
@@ -40,15 +43,24 @@ namespace jshepler.ngu.mods
                     SetBloodMagicButtonColor(button);
                 });
 
-            Plugin.OnUpdate += (o, e) =>
-            {
-                if (!_enabled || !AutomationThrottle.ShouldRunEveryFrames(ref _lastCheckFrame))
-                    return;
-
-                castReadySpells();
-            };
-
             SetBloodMagicButtonColor(button);
+        }
+
+        private static void RegisterEvents()
+        {
+            if (_eventsRegistered)
+                return;
+
+            Plugin.OnUpdate += (o, e) => Update();
+            _eventsRegistered = true;
+        }
+
+        private static void Update()
+        {
+            if (!_enabled || !AutomationThrottle.ShouldRunEveryFrames(ref _lastCheckFrame))
+                return;
+
+            castReadySpells();
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ButtonShower), "updateButtons")]

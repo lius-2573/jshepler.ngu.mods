@@ -17,9 +17,6 @@
         <Compile Include="Menu.cs" />
         <Compile Include="ClickHandlerComponent.cs" />
         <Compile Include="NumberFormating.cs" />
-        <Compile Include="SimpleJSON.cs" />
-        <Compile Include="SimpleJSONDotNetTypes.cs" />
-        <Compile Include="IsExternalInit.cs" />
         <Compile Include="AutoHarvestFruits.cs" />
         <Compile Include="AutoDailyActions.cs" />
         <Compile Include="AutoBloodMagic.cs" />

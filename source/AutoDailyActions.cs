@@ -9,6 +9,7 @@ namespace jshepler.ngu.mods
     internal class AutoDailyActions
     {
         private static int _lastCheckFrame = -1;
+        private static bool _eventsRegistered;
         private static bool _autoToss
         {
             get => Options.MoneyPit.AutoToss.Value;
@@ -21,14 +22,20 @@ namespace jshepler.ngu.mods
             set => Options.DailySpin.AutoSpin.Value = value;
         }
 
-        private static MethodInfo _tossGoldMethod = typeof(PitController).GetMethod("engage", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly MethodInfo _tossGoldMethod = typeof(PitController).GetMethod("engage", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static bool _tossGoldMethodMissingLogged;
 
         [HarmonyPostfix, HarmonyPatch(typeof(ButtonShower), "Start")]
         private static void ButtonShower_Start_postfix(ButtonShower __instance)
         {
+            RegisterEvents();
+
             // 每日转盘没有自己的按钮,与原 RIghtClickMoneyPit 一致,绑定在钱坑按钮上:
             // shift+右键 = 切换钱坑自动投;alt+右键 = 切换转盘自动转
             var button = __instance.pit;
+            if (button == null)
+                return;
+
             button.gameObject.AddComponent<ClickHandlerComponent>()
                 .OnRightClick(e =>
                 {
@@ -47,19 +54,28 @@ namespace jshepler.ngu.mods
                         setColor(button);
                     }
                 });
+        }
 
-            Plugin.OnUpdate += (o, e) =>
-            {
-                if ((!_autoToss && !_autoSpin)
-                    || !AutomationThrottle.ShouldRunEveryFrames(ref _lastCheckFrame))
-                    return;
+        private static void RegisterEvents()
+        {
+            if (_eventsRegistered)
+                return;
 
-                if (_autoToss)
-                    tossGold();
+            Plugin.OnUpdate += (o, e) => Update();
+            _eventsRegistered = true;
+        }
 
-                if (_autoSpin)
-                    doSpin();
-            };
+        private static void Update()
+        {
+            if ((!_autoToss && !_autoSpin)
+                || !AutomationThrottle.ShouldRunEveryFrames(ref _lastCheckFrame))
+                return;
+
+            if (_autoToss)
+                tossGold();
+
+            if (_autoSpin)
+                doSpin();
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ButtonShower), "updateButtons")]
@@ -70,7 +86,7 @@ namespace jshepler.ngu.mods
 
         private static void setColor(Button button)
         {
-            if (Plugin.Character == null)
+            if (Plugin.Character == null || button == null)
                 return;
 
             button.image.color = _autoToss && _autoSpin ? Plugin.ButtonColor_Yellow
@@ -89,7 +105,18 @@ namespace jshepler.ngu.mods
             if (!pitController.canToss())
                 return;
 
-            _tossGoldMethod.Invoke(pitController, new object[0]);
+            if (_tossGoldMethod == null)
+            {
+                if (!_tossGoldMethodMissingLogged)
+                {
+                    Plugin.LogInfo("AutoDailyActions: PitController.engage() not found; automatic money-pit toss is disabled.");
+                    _tossGoldMethodMissingLogged = true;
+                }
+
+                return;
+            }
+
+            _tossGoldMethod.Invoke(pitController, null);
             Plugin.ShowNotification(pitController.pitText.text);
         }
 

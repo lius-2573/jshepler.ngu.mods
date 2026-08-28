@@ -10,6 +10,7 @@ namespace jshepler.ngu.mods
     internal static class AutoWishes
     {
         private static readonly List<int> _runningWishIds = new();
+        private static bool _eventsRegistered;
         private static float _lastCheckTime = float.NegativeInfinity;
         private static bool _resourcesPrepared;
         private enum ResourceKind
@@ -33,6 +34,8 @@ namespace jshepler.ngu.mods
         [HarmonyPostfix, HarmonyPatch(typeof(ButtonShower), "Start")]
         private static void ButtonShower_Start_postfix(ButtonShower __instance)
         {
+            RegisterEvents();
+
             var button = __instance.wishes;
             if (button == null)
                 return;
@@ -56,10 +59,16 @@ namespace jshepler.ngu.mods
                         AutomationThrottle.Reset(ref _lastCheckTime);
                     }
                 });
+        }
+
+        private static void RegisterEvents()
+        {
+            if (_eventsRegistered)
+                return;
 
             Plugin.OnGameStart += (o, e) => ResetState();
             Plugin.OnSaveLoaded += (o, e) => ResetState();
-            SetButtonColor(button);
+            _eventsRegistered = true;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ButtonShower), "updateButtons")]

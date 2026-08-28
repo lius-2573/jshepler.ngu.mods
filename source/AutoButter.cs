@@ -20,9 +20,18 @@ namespace jshepler.ngu.mods
         {
             var gob = GameObject.Find("Canvas/Beast Quest Canvas/Beast Quest Menu/Butter Button");
             if (gob == null)
+            {
+                Plugin.LogInfo("AutoButter: butter button was not found; shortcut was not attached.");
                 return;
+            }
 
             _button = gob.GetComponent<Button>();
+            if (_button == null)
+            {
+                Plugin.LogInfo("AutoButter: butter button has no Button component; shortcut was not attached.");
+                return;
+            }
+
             gob.AddComponent<ClickHandlerComponent>()
                 .OnRightClick(e =>
                 {
@@ -45,6 +54,9 @@ namespace jshepler.ngu.mods
 
         private static void setColor()
         {
+            if (_button == null)
+                return;
+
             _button.image.color = _enabled ? Plugin.ButtonColor_LightBlue : Color.white;
         }
 

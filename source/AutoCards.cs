@@ -30,6 +30,10 @@ namespace jshepler.ngu.mods
     internal static class AutoCards
     {
         private const int ManaTypeCount = 6;
+        private const int AlwaysYeetFlagCount = 15;
+
+        private static readonly bool[] AlwaysYeetFlags = new bool[AlwaysYeetFlagCount];
+        private static string _cachedAlwaysYeetCsv;
 
         private static bool _autoYeetInProgress;
         private static bool _eventsRegistered;
@@ -194,6 +198,8 @@ namespace jshepler.ngu.mods
             if (cards == null || _autoYeetInProgress)
                 return;
 
+            RefreshAlwaysYeetFlags();
+
             _autoYeetInProgress = true;
             try
             {
@@ -240,14 +246,28 @@ namespace jshepler.ngu.mods
             };
         }
 
+        private static void RefreshAlwaysYeetFlags()
+        {
+            var csv = Options.Cards.AlwaysYeetCSV.Value ?? string.Empty;
+            if (string.Equals(_cachedAlwaysYeetCsv, csv, StringComparison.Ordinal))
+                return;
+
+            _cachedAlwaysYeetCsv = csv;
+            Array.Clear(AlwaysYeetFlags, 0, AlwaysYeetFlags.Length);
+
+            var values = csv.Split(',');
+            var count = Math.Min(values.Length, AlwaysYeetFlagCount);
+            for (var index = 0; index < count; index++)
+                AlwaysYeetFlags[index] = values[index].Trim() == "1";
+        }
+
         private static bool IsAlwaysYeet(Card card)
         {
             var index = card.type == cardType.end ? 0 : (int)card.bonusType;
-            if (index < 0 || index >= 15)
+            if (index < 0 || index >= AlwaysYeetFlagCount)
                 return false;
 
-            var values = (Options.Cards.AlwaysYeetCSV.Value ?? string.Empty).Split(',');
-            return index < values.Length && values[index].Trim() == "1";
+            return AlwaysYeetFlags[index];
         }
 
         private static void UpdateAutoCast()
@@ -275,19 +295,14 @@ namespace jshepler.ngu.mods
                 return;
             }
 
-            var target = FindAutoCastTarget(controller);
-            if (target == null)
-            {
-                ReleaseGeneratorControl();
-                return;
-            }
-
-            var targetIndex = cards.IndexOf(target);
+            var targetIndex = FindAutoCastTargetIndex(controller);
             if (targetIndex < 0)
             {
                 ReleaseGeneratorControl();
                 return;
             }
+            var target = cards[targetIndex];
+
 
             if (HasEnoughMayo(controller, target))
             {
@@ -310,10 +325,15 @@ namespace jshepler.ngu.mods
             AllocateGeneratorsForTarget(controller, target);
         }
 
-        private static Card FindAutoCastTarget(CardsController controller)
+        private static int FindAutoCastTargetIndex(CardsController controller)
         {
             var cards = controller.character.cards.cards;
-            Card best = null;
+            var sortBy = AutoSortBy;
+            var useVariance = sortBy == CardSortBy.Variance;
+            var useMetric = useVariance
+                || (sortBy != CardSortBy.RarityFirst && sortBy != CardSortBy.TypeFirst);
+            var bestIndex = -1;
+            var bestMetric = 0f;
 
             for (var index = 0; index < cards.Count; index++)
             {
@@ -321,12 +341,26 @@ namespace jshepler.ngu.mods
                 if (!IsAutoCastCandidate(card))
                     continue;
 
-                if (best == null
-                    || CompareCards(card, best, AutoSortBy, CardSortDirection.Descending) < 0)
-                    best = card;
+                if (useMetric)
+                {
+                    var metric = useVariance
+                        ? CardMetrics.GetVariance(card)
+                        : CardMetrics.GetEfficiency(card, controller);
+
+                    if (bestIndex < 0 || metric.CompareTo(bestMetric) > 0)
+                    {
+                        bestIndex = index;
+                        bestMetric = metric;
+                    }
+                }
+                else if (bestIndex < 0
+                    || CompareCards(card, cards[bestIndex], sortBy, CardSortDirection.Descending) < 0)
+                {
+                    bestIndex = index;
+                }
             }
 
-            return best;
+            return bestIndex;
         }
 
         private static bool IsAutoCastCandidate(Card card)

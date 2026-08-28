@@ -14,11 +14,17 @@ namespace jshepler.ngu.mods
             if (method != null)
                 return;
 
-            GameObject.Find("Canvas/End Panel (6)/Button")
-                .AddComponent<ClickHandlerComponent>()
-                .OnRightClick(resetGame);
-
             Plugin.OnGameStart += (o, e) => Plugin.Character.endFinish();
+
+            var button = GameObject.Find("Canvas/End Panel (6)/Button");
+            if (button == null)
+            {
+                Plugin.LogInfo("Heirloom: end-panel reset button was not found; reset shortcut was not attached.");
+                return;
+            }
+
+            button.AddComponent<ClickHandlerComponent>()
+                .OnRightClick(resetGame);
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(Character), "showEndSequence")]

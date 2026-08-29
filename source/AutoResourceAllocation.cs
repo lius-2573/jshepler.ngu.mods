@@ -11,6 +11,7 @@ namespace jshepler.ngu.mods
     {
         private enum Feature
         {
+            Yggdrasil,
             Augment,
             BloodMagic,
             TimeMachine,
@@ -22,6 +23,7 @@ namespace jshepler.ngu.mods
 
         private static readonly Feature[] DefaultPriority =
         {
+            Feature.Yggdrasil,
             Feature.Augment,
             Feature.BloodMagic,
             Feature.TimeMachine,
@@ -113,6 +115,9 @@ namespace jshepler.ngu.mods
             {
                 switch (order[index])
                 {
+                    case Feature.Yggdrasil:
+                        ActivateYggdrasilFruits(character);
+                        break;
                     case Feature.Augment:
                         AllocateAugmentEnergy(character);
                         break;
@@ -375,6 +380,54 @@ namespace jshepler.ngu.mods
                 default:
                     feature = default;
                     return false;
+            }
+        }
+
+        // fruits whose permanent auto-activation was NOT bought with EXP must be activated manually
+        // by the player, paying the one-time activation cost (FruitController.activate) after every
+        // harvest/rebirth; this mirrors that activation from the idle pool (no tooltips, no partial
+        // payment - same invariant as vanilla: idle covers the full cost, idle and cur both drop)
+        private static void ActivateYggdrasilFruits(Character character)
+        {
+            if (!Options.Yggdrasil.AutoActivate.Value
+                || character.yggdrasil == null
+                || character.yggdrasil.fruits == null
+                || character.yggdrasilController == null
+                || character.yggdrasilController.activationCost == null
+                || character.yggdrasilController.usesEnergy == null
+                || character.magic == null)
+                return;
+
+            var count = Math.Min(
+                Math.Min(character.yggdrasil.fruits.Count, character.yggdrasilController.activationCost.Count),
+                character.yggdrasilController.usesEnergy.Count);
+            for (var id = 0; id < count; id++)
+            {
+                var fruit = character.yggdrasil.fruits[id];
+
+                // permCostPaid fruits are auto-activated for free by AllYggdrasil.updateFruitTimers
+                if (fruit == null || fruit.activated || fruit.permCostPaid || fruit.maxTier <= 0L)
+                    continue;
+
+                var cost = character.yggdrasilController.activationCost[id];
+                if (character.yggdrasilController.usesEnergy[id])
+                {
+                    if (character.idleEnergy < cost)
+                        continue;
+
+                    character.idleEnergy -= cost;
+                    character.curEnergy -= cost;
+                }
+                else
+                {
+                    if (character.magic.idleMagic < cost)
+                        continue;
+
+                    character.magic.idleMagic -= cost;
+                    character.magic.curMagic -= cost;
+                }
+
+                fruit.activate();
             }
         }
 

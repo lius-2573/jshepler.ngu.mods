@@ -10,12 +10,13 @@ namespace jshepler.ngu.mods
         {
             AdvancedTraining.AutoAllocateEnergy = Config.Bind("AdvancedTraining", "AutoAllocateEnergy", true, "automatically allocate 100% next-level energy to advanced training and return it to NGU when the target is reached");
             TimeMachine.AutoAllocateEnergy = Config.Bind("TimeMachine", "AutoAllocateEnergy", true, "automatically allocate 100% next-level energy to time machine speed and magic, taking resources from idle pools and NGUs");
-            AutoAllocation.Priority = Config.Bind("AutoAllocation", "Priority", "Augment,BloodMagic,TimeMachine,AdvancedTraining,Wandoos,NGU,Wishes", "allocation order; valid values: Augment, BloodMagic, TimeMachine, AdvancedTraining, Wandoos, NGU, Wishes");
+            AutoAllocation.Priority = Config.Bind("AutoAllocation", "Priority", "Yggdrasil,Augment,BloodMagic,TimeMachine,AdvancedTraining,Wandoos,NGU,Wishes", "allocation order; valid values: Yggdrasil, Augment, BloodMagic, TimeMachine, AdvancedTraining, Wandoos, NGU, Wishes");
             AutoAllocation.Augment = Config.Bind("AutoAllocation", "Augment", true, "automatically fill unlocked augment energy to the next-level cap");
             AutoAllocation.BloodMagic = Config.Bind("AutoAllocation", "BloodMagic", true, "automatically fill unlocked blood ritual magic to the cap");
             AutoAllocation.Wandoos = Config.Bind("AutoAllocation", "Wandoos", true, "automatically fill Wandoos energy and magic to their caps");
             AutoAllocation.NGU = Config.Bind("AutoAllocation", "NGU", true, "automatically fill NGU energy and magic to their next-level caps");
             Yggdrasil.AutoHarvest = Config.Bind("Yggdrasil", "AutoHarvest", true, "enable auto harvest/eat fruits when fully grown (max tier)");
+            Yggdrasil.AutoActivate = Config.Bind("Yggdrasil", "AutoActivate", true, "automatically activate fruits whose permanent unlock was bought with EXP, paying the one-time activation cost (Yggdrasil is first in AutoAllocation.Priority by default)");
             Wishes.AutoAllocate = Config.Bind("Wishes", "AutoAllocate", false, "at the configured interval, split idle energy, magic, and res3 between running wishes and start the next wish when one completes");
             AutoMergeTransform.Enabled = Config.Bind("AutoMergeTransform", "Enabled", true, "enables/disables auto merging and transforming of pendants and looties");
             Questing.AutoButter = Config.Bind("Questing", "AutoButter", true, "If true, will automatically use butter when starting a major quest");
@@ -42,6 +43,7 @@ namespace jshepler.ngu.mods
         internal static class Yggdrasil
         {
             internal static ConfigEntry<bool> AutoHarvest;
+            internal static ConfigEntry<bool> AutoActivate;
         }
 
         internal static class AutoMergeTransform

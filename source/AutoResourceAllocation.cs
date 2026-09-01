@@ -163,8 +163,6 @@ namespace jshepler.ngu.mods
                 ReleaseWandoosResources(character);
             if (Options.AutoAllocation.NGU.Value)
                 ReleaseNguResources(character);
-            if (Options.AutoAllocation.Hacks.Value)
-                ReleaseHackResources(character);
         }
 
         private static void ReleaseAugmentResources(Character character)
@@ -313,16 +311,6 @@ namespace jshepler.ngu.mods
                         allNgu.NGUMagic[id].updateText();
                 }
             }
-        }
-
-        private static void ReleaseHackResources(Character character)
-        {
-            var controller = character.hacksController;
-            if (controller == null || character.hacks == null || character.hacks.hacks == null)
-                return;
-
-            controller.removeAllR3();
-            controller.refreshMenu();
         }
 
         private static void AddIdleEnergy(Character character, long amount)
@@ -724,9 +712,11 @@ namespace jshepler.ngu.mods
             }
         }
 
-        // fills idle res3 into upgradeable hacks (id 0..14, THE END hack id 15 takes no direct
-        // allocation) up to the amount needed for the next level; when wishes are also being
-        // auto-allocated and Hacks has higher priority than Wishes in AutoAllocation.Priority,
+        // tops up idle res3 into upgradeable hacks (id 0..14, THE END hack id 15 takes no direct
+        // allocation) up to the amount needed for the next level; res3 already sitting in a hack
+        // is never reclaimed, only the shortfall is topped up from the idle pool on each check
+        // (same control pattern as wishes, which keep their res3 resident); when wishes are also
+        // being auto-allocated and Hacks has higher priority than Wishes in AutoAllocation.Priority,
         // the total amount allocated across all hacks is limited to half the res3 cap so wishes
         // keep the other half
         private static void AllocateHacks(Character character)
@@ -749,9 +739,17 @@ namespace jshepler.ngu.mods
             if (count <= 0)
                 return;
 
-            var changed = false;
             var last = count - 1; // skip THE END hack
-            for (var id = 0; id < last && budget > 0; id++)
+            var used = 0L;
+            for (var id = 0; id < last; id++)
+            {
+                var hack = character.hacks.hacks[id];
+                if (hack != null)
+                    used += Math.Max(hack.res3, 0L);
+            }
+
+            var changed = false;
+            for (var id = 0; id < last; id++)
             {
                 var hack = character.hacks.hacks[id];
                 if (hack == null
@@ -759,12 +757,21 @@ namespace jshepler.ngu.mods
                     || hack.level >= controller.hardCapLevel(id))
                     continue;
 
-                var amount = TakeRes3(character, hack.res3, HackCapForNextLevel(character, controller, id), budget);
+                var cap = HackCapForNextLevel(character, controller, id);
+                if (cap <= hack.res3)
+                    continue;
+
+                var needed = cap - Math.Max(hack.res3, 0L);
+                var allow = budget == long.MaxValue ? needed : Math.Min(needed, Math.Max(budget - used, 0L));
+                if (allow <= 0L)
+                    continue;
+
+                var amount = TakeRes3(character, allow);
                 if (amount <= 0)
                     continue;
 
                 hack.res3 += amount;
-                budget -= amount;
+                used += amount;
                 changed = true;
             }
 
@@ -792,14 +799,12 @@ namespace jshepler.ngu.mods
             return CapFromDouble(cap);
         }
 
-        private static long TakeRes3(Character character, long current, long cap, long budget)
+        private static long TakeRes3(Character character, long amount)
         {
-            if (cap <= current || character.res3 == null)
+            if (amount <= 0L || character.res3 == null)
                 return 0L;
 
-            var needed = cap - Math.Max(current, 0L);
-            var taken = Math.Min(needed, Math.Max(character.res3.idleRes3, 0L));
-            taken = Math.Min(taken, budget);
+            var taken = Math.Min(amount, Math.Max(character.res3.idleRes3, 0L));
             character.res3.idleRes3 -= taken;
             return taken;
         }

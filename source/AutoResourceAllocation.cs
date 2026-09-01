@@ -18,6 +18,7 @@ namespace jshepler.ngu.mods
             AdvancedTraining,
             Wandoos,
             NGU,
+            Hacks,
             Wishes
         }
 
@@ -30,6 +31,7 @@ namespace jshepler.ngu.mods
             Feature.AdvancedTraining,
             Feature.Wandoos,
             Feature.NGU,
+            Feature.Hacks,
             Feature.Wishes
         };
 
@@ -56,6 +58,7 @@ namespace jshepler.ngu.mods
             AttachToggle(__instance.bloodMagic, Options.AutoAllocation.BloodMagic, false);
             AttachToggle(__instance.wandoos, Options.AutoAllocation.Wandoos);
             AttachToggle(__instance.ngu, Options.AutoAllocation.NGU);
+            AttachToggle(__instance.hacks, Options.AutoAllocation.Hacks);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ButtonShower), "updateButtons")]
@@ -64,6 +67,7 @@ namespace jshepler.ngu.mods
             SetButtonColor(__instance.augmentation, Options.AutoAllocation.Augment.Value);
             SetButtonColor(__instance.wandoos, Options.AutoAllocation.Wandoos.Value);
             SetButtonColor(__instance.ngu, Options.AutoAllocation.NGU.Value);
+            SetButtonColor(__instance.hacks, Options.AutoAllocation.Hacks.Value);
         }
 
         private static void AttachToggle(Button button, ConfigEntry<bool> option, bool showColor = true)
@@ -136,6 +140,9 @@ namespace jshepler.ngu.mods
                     case Feature.NGU:
                         AllocateNgu(character);
                         break;
+                    case Feature.Hacks:
+                        AllocateHacks(character);
+                        break;
                     case Feature.Wishes:
                         AutoWishes.UpdateAllocationForPriority();
                         break;
@@ -156,6 +163,8 @@ namespace jshepler.ngu.mods
                 ReleaseWandoosResources(character);
             if (Options.AutoAllocation.NGU.Value)
                 ReleaseNguResources(character);
+            if (Options.AutoAllocation.Hacks.Value)
+                ReleaseHackResources(character);
         }
 
         private static void ReleaseAugmentResources(Character character)
@@ -304,6 +313,16 @@ namespace jshepler.ngu.mods
                         allNgu.NGUMagic[id].updateText();
                 }
             }
+        }
+
+        private static void ReleaseHackResources(Character character)
+        {
+            var controller = character.hacksController;
+            if (controller == null || character.hacks == null || character.hacks.hacks == null)
+                return;
+
+            controller.removeAllR3();
+            controller.refreshMenu();
         }
 
         private static void AddIdleEnergy(Character character, long amount)
@@ -703,6 +722,94 @@ namespace jshepler.ngu.mods
                 skill.magic += amount;
                 controller.updateText();
             }
+        }
+
+        // fills idle res3 into upgradeable hacks (id 0..14, THE END hack id 15 takes no direct
+        // allocation) up to the amount needed for the next level; when wishes are also being
+        // auto-allocated and Hacks has higher priority than Wishes in AutoAllocation.Priority,
+        // the total amount allocated across all hacks is limited to half the res3 cap so wishes
+        // keep the other half
+        private static void AllocateHacks(Character character)
+        {
+            var controller = character.hacksController;
+            if (!Options.AutoAllocation.Hacks.Value
+                || controller == null
+                || character.hacks == null
+                || character.hacks.hacks == null
+                || character.hacks.hacks.Count == 0
+                || character.res3 == null
+                || !character.hacks.hacksOn)
+                return;
+
+            var budget = long.MaxValue;
+            if (Options.Wishes.AutoAllocate.Value && HacksBeforeWishes())
+                budget = Math.Max(character.totalCapRes3() / 2L, 0L);
+
+            var count = Math.Min(character.hacks.hacks.Count, controller.properties?.Count ?? 0);
+            if (count <= 0)
+                return;
+
+            var changed = false;
+            var last = count - 1; // skip THE END hack
+            for (var id = 0; id < last && budget > 0; id++)
+            {
+                var hack = character.hacks.hacks[id];
+                if (hack == null
+                    || controller.hitTarget(id)
+                    || hack.level >= controller.hardCapLevel(id))
+                    continue;
+
+                var amount = TakeRes3(character, hack.res3, HackCapForNextLevel(character, controller, id), budget);
+                if (amount <= 0)
+                    continue;
+
+                hack.res3 += amount;
+                budget -= amount;
+                changed = true;
+            }
+
+            if (changed)
+                controller.refreshMenu();
+        }
+
+        // res3 needed for the next hack level: progress per tick is
+        // res3 * res3Power * hackSpeedBonus / (baseDivider * 1.0078^level * (level + 1)),
+        // so reaching 1 progress requires baseDivider * 1.0078^level * (level + 1) / (power * speed)
+        private static long HackCapForNextLevel(Character character, HacksController controller, int id)
+        {
+            var properties = controller.properties;
+            if (properties == null || id >= properties.Count)
+                return 0L;
+
+            var power = (double)character.totalRes3Power();
+            var speed = (double)controller.totalHackSpeedBonus();
+            var divider = (double)properties[id].baseDivider;
+            if (power <= 0d || speed <= 0d || divider <= 0d)
+                return 0L;
+
+            var level = (double)character.hacks.hacks[id].level;
+            var cap = divider * Math.Pow(1.0078d, level) * (level + 1d) / (power * speed);
+            return CapFromDouble(cap);
+        }
+
+        private static long TakeRes3(Character character, long current, long cap, long budget)
+        {
+            if (cap <= current || character.res3 == null)
+                return 0L;
+
+            var needed = cap - Math.Max(current, 0L);
+            var taken = Math.Min(needed, Math.Max(character.res3.idleRes3, 0L));
+            taken = Math.Min(taken, budget);
+            character.res3.idleRes3 -= taken;
+            return taken;
+        }
+
+        private static bool HacksBeforeWishes()
+        {
+            var order = GetPriorityOrder();
+            var hacksIndex = Array.IndexOf(order, Feature.Hacks);
+            var wishesIndex = Array.IndexOf(order, Feature.Wishes);
+            return hacksIndex >= 0 && wishesIndex > hacksIndex;
         }
 
         private static long CapFromDouble(double cap)

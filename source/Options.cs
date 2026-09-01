@@ -10,11 +10,12 @@ namespace jshepler.ngu.mods
         {
             AdvancedTraining.AutoAllocateEnergy = Config.Bind("AdvancedTraining", "AutoAllocateEnergy", true, "automatically allocate 100% next-level energy to advanced training and return it to NGU when the target is reached");
             TimeMachine.AutoAllocateEnergy = Config.Bind("TimeMachine", "AutoAllocateEnergy", true, "automatically allocate 100% next-level energy to time machine speed and magic, taking resources from idle pools and NGUs");
-            AutoAllocation.Priority = Config.Bind("AutoAllocation", "Priority", "Yggdrasil,Augment,BloodMagic,TimeMachine,AdvancedTraining,Wandoos,NGU,Wishes", "allocation order; valid values: Yggdrasil, Augment, BloodMagic, TimeMachine, AdvancedTraining, Wandoos, NGU, Wishes");
+            AutoAllocation.Priority = Config.Bind("AutoAllocation", "Priority", "Yggdrasil,Augment,BloodMagic,TimeMachine,AdvancedTraining,Wandoos,NGU,Hacks,Wishes", "allocation order; valid values: Yggdrasil, Augment, BloodMagic, TimeMachine, AdvancedTraining, Wandoos, NGU, Hacks, Wishes");
             AutoAllocation.Augment = Config.Bind("AutoAllocation", "Augment", true, "automatically fill unlocked augment energy to the next-level cap");
             AutoAllocation.BloodMagic = Config.Bind("AutoAllocation", "BloodMagic", true, "automatically fill unlocked blood ritual magic to the cap");
             AutoAllocation.Wandoos = Config.Bind("AutoAllocation", "Wandoos", true, "automatically fill Wandoos energy and magic to their caps");
             AutoAllocation.NGU = Config.Bind("AutoAllocation", "NGU", true, "automatically fill NGU energy and magic to their next-level caps");
+            AutoAllocation.Hacks = Config.Bind("AutoAllocation", "Hacks", true, "automatically fill res3 into upgradeable hacks up to the next-level cap; when wishes are also auto-allocated and Hacks has higher priority than Wishes, hacks are limited to half the total res3 cap");
             Yggdrasil.AutoHarvest = Config.Bind("Yggdrasil", "AutoHarvest", true, "enable auto harvest/eat fruits when fully grown (max tier)");
             Yggdrasil.AutoActivate = Config.Bind("Yggdrasil", "AutoActivate", true, "automatically activate fruits whose permanent unlock was bought with EXP, paying the one-time activation cost (Yggdrasil is first in AutoAllocation.Priority by default)");
             Wishes.AutoAllocate = Config.Bind("Wishes", "AutoAllocate", false, "at the configured interval, split idle energy, magic, and res3 between running wishes and start the next wish when one completes");
@@ -88,6 +89,7 @@ namespace jshepler.ngu.mods
             internal static ConfigEntry<bool> BloodMagic;
             internal static ConfigEntry<bool> Wandoos;
             internal static ConfigEntry<bool> NGU;
+            internal static ConfigEntry<bool> Hacks;
         }
 
         internal static class GoldDiggers

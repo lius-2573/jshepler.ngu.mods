@@ -31,6 +31,7 @@
 | 时光机器自动分配能量/魔力 | `[TimeMachine] AutoAllocateEnergy`(true) | 时光机器按钮 **Shift+右键** 切换(浅蓝) | 时光机器解锁后，速度与金币倍增两条进度分别自动分配达到下一等级所需的能量/魔力;分别优先取空闲池，不足时从对应 NGU 释放，达到目标后停止重新分配 |
 | 高级训练自动切换能量 | `[AdvancedTraining] AutoAllocateEnergy`(true) | 高级训练按钮 **Shift+右键** 切换(浅蓝) | 高级训练解锁后，所有未完成训练分配下一级100%等级上限能量;完成的训练能量回到全局空闲池 |
 | 多资源自动上限分配 | `[AutoAllocation]`(true) | 挂件、Wandoos、NGU 菜单按钮 **Shift+右键**;血魔法菜单 **Shift+右键** 切换仪式魔力 | 每次检查先回收已由自动化管理的分配，再按 `Priority` 重新计算上限并分配;包括挂件能量/升级能量、血魔法魔力、时光机器能量/魔力、高级训练、Wandoos能量/魔力、NGU能量/魔力和 Wishes 的能量/魔力/Res3 |
+| 黑客自动分配 Res3 | `[AutoAllocation] Hacks`(true) | 黑客按钮 **Shift+右键** 切换(浅蓝) | 黑客解锁后，所有可升级的黑客升级项(未达硬上限、未达手动目标，不含 THE END 黑客)自动分配达到下一等级所需的 Res3;同时开启许愿自动化且 `Priority` 中 Hacks 排在 Wishes 之前时，黑客合计最多占用 Res3 总容量的一半，剩余留给许愿 |
 | 自动许愿资源分配与续愿 | `[Wishes] AutoAllocate`(false) | 许愿按钮 **Shift+右键** 切换(浅蓝) | 每 1 秒检查一次;汇总当前运行许愿与空闲池中的三种资源后重新平均分配(各槽位最多相差 1);存在空槽时按当前许愿列表顺序自动开启下一个未满级、未锁定、未运行的许愿(加载存档后空槽即自动补位,无需等待满级事件) |
 | 卡牌自动整理与自动出牌 | `[Cards] AutoCast.Enabled`(false);排序默认开启 | Cards 按钮 **Shift+右键** 切换自动出牌(浅蓝);卡牌界面 `S`=排序、`Y`=手动执行弃牌 | 自动排序/弃牌/保护 Chonker 沿用原版逻辑。自动出牌全局运行，每次检查最多一张，始终选择当前排序字段下的高优先级普通卡或 Chonker；跳过 `THE END` 与普通受保护卡。Chonker 保持保护直到被选中且蛋黄充足，出牌时临时解除保护；蛋黄不足时暂停无关生成器，只运行目标卡缺少的类型并在槽位不足时轮换；目标完成或自动出牌关闭后恢复之前的生成器状态 |
 | 自动合并/转化吊坠与 Looty | `[AutoMergeTransform] Enabled`(true) | — | 执行合并时自动把吊坠/Looty/Flubber 合成到最高级并转化为下一阶段物品(A9/lootz 除外),可一次跑多轮直至无可转化 |
@@ -60,11 +61,12 @@
 | `[DailySpin]` | `AutoSpin` | `true` | 每日转盘自动转 |
 | `[BloodMagic]` | `AutoCast` | `true` | 铁柱自动施法 |
 | `[AutoMergeTransform]` | `Enabled` | `true` | 吊坠/Looty 自动合并转化 |
-| `[AutoAllocation]` | `Priority` | `Augment,BloodMagic,TimeMachine,AdvancedTraining,Wandoos,NGU,Wishes` | 全局资源分配顺序;缺少或重复项会自动补齐默认顺序 |
+| `[AutoAllocation]` | `Priority` | `Yggdrasil,Augment,BloodMagic,TimeMachine,AdvancedTraining,Wandoos,NGU,Hacks,Wishes` | 全局资源分配顺序;缺少或重复项会自动补齐默认顺序 |
 | `[AutoAllocation]` | `Augment` | `true` | 挂件能量和升级能量自动分配 |
 | `[AutoAllocation]` | `BloodMagic` | `true` | 血魔法仪式魔力自动分配 |
 | `[AutoAllocation]` | `Wandoos` | `true` | Wandoos 能量和魔力自动分配 |
 | `[AutoAllocation]` | `NGU` | `true` | NGU 能量和魔力自动分配 |
+| `[AutoAllocation]` | `Hacks` | `true` | 黑客自动分配 Res3;Hacks 在 `Priority` 中排在 Wishes 前且许愿自动化开启时,黑客合计最多占用 Res3 总容量的一半 |
 | `[TimeMachine]` | `AutoAllocateEnergy` | `true` | 时光机器能量和魔力自动分配 |
 | `[AdvancedTraining]` | `AutoAllocateEnergy` | `true` | 高级训练能量自动分配 |
 | `[Wishes]` | `AutoAllocate` | `false` | 汇总运行许愿与空闲池中的能量、魔力和 Res3 后平均重分配;完成后自动开启下一个许愿 |

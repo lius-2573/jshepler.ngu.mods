@@ -114,6 +114,13 @@ namespace jshepler.ngu.mods
 
             AutoWishes.PrepareForPriority();
             ReleaseManagedResources(character);
+            // wandoos gets a guaranteed top-up before the priority loop: its progress
+            // stalls completely at wandoosEnergy == 0 (vanilla advance*Progress early-
+            // returns), and during bootup / high OS levels its cap exceeds the whole
+            // pool, so a starved wandoos could never recover on its own. The reclaim
+            // above keeps priority-based yielding intact - higher-priority modules
+            // still drain the pool first in the loop below (which skips Wandoos).
+            AllocateWandoos(character);
             var order = GetPriorityOrder();
             for (var index = 0; index < order.Length; index++)
             {
@@ -135,8 +142,7 @@ namespace jshepler.ngu.mods
                         AllocateAdvancedTraining(character);
                         break;
                     case Feature.Wandoos:
-                        AllocateWandoos(character);
-                        break;
+                        break; // topped up before the loop; Priority position no longer starves it
                     case Feature.NGU:
                         AllocateNgu(character);
                         break;
@@ -462,8 +468,7 @@ namespace jshepler.ngu.mods
                     var amount = TakeEnergy(
                         character,
                         augment.augEnergy,
-                        AugmentCapForNextLevel(character, controller, false),
-                        true);
+                        AugmentCapForNextLevel(character, controller, false));
                     if (amount > 0L)
                     {
                         augment.augEnergy += amount;
@@ -476,8 +481,7 @@ namespace jshepler.ngu.mods
                     var amount = TakeEnergy(
                         character,
                         augment.upgradeEnergy,
-                        AugmentCapForNextLevel(character, controller, true),
-                        true);
+                        AugmentCapForNextLevel(character, controller, true));
                     if (amount > 0L)
                     {
                         augment.upgradeEnergy += amount;
@@ -555,7 +559,7 @@ namespace jshepler.ngu.mods
                 if (ritualController == null || ritual == null)
                     continue;
 
-                var amount = TakeMagic(character, ritual.magic, ritualController.capValue(), true);
+                var amount = TakeMagic(character, ritual.magic, ritualController.capValue());
                 if (amount <= 0)
                     continue;
 
@@ -579,8 +583,7 @@ namespace jshepler.ngu.mods
                 var amount = TakeEnergy(
                     character,
                     machine.speedEnergy,
-                    AutoTimeMachineEnergy.SpeedCapForNextLevel(character, controller),
-                    true);
+                    AutoTimeMachineEnergy.SpeedCapForNextLevel(character, controller));
                 if (amount > 0)
                 {
                     machine.speedEnergy += amount;
@@ -593,8 +596,7 @@ namespace jshepler.ngu.mods
                 var amount = TakeMagic(
                     character,
                     machine.goldMultiMagic,
-                    AutoTimeMachineEnergy.MagicCapForNextLevel(character, controller),
-                    true);
+                    AutoTimeMachineEnergy.MagicCapForNextLevel(character, controller));
                 if (amount > 0)
                 {
                     machine.goldMultiMagic += amount;
@@ -627,8 +629,7 @@ namespace jshepler.ngu.mods
                 var amount = TakeEnergy(
                     character,
                     character.advancedTraining.energy[id],
-                    AutoAdvancedTrainingEnergy.TrainingCapForNextLevel(character, controller),
-                    true);
+                    AutoAdvancedTrainingEnergy.TrainingCapForNextLevel(character, controller));
                 if (amount <= 0)
                     continue;
 
@@ -637,31 +638,68 @@ namespace jshepler.ngu.mods
             }
         }
 
+        // wandoos semantics: progress per tick is wandoosEnergy * speed / baseTime and
+        // vanilla's advance*Progress returns immediately while wandoosEnergy == 0; the
+        // per-tick level gain caps at +1, so the optimal holding is exactly
+        // capAmountEnergy (= baseTime / speed). During bootup (or with high OS levels)
+        // that cap can far exceed the player's total energy - in that case inject every
+        // free scrap so the bar progresses as fast as the pool allows. settings.wandoos98On
+        // ("power on", ctor default false, only set by eating the Wandoos 98 startup disc,
+        // no UI toggle) gates vanilla progress; auto power-on once installed, otherwise the
+        // allocator would silently stall forever.
         private static void AllocateWandoos(Character character)
         {
             var controller = character.wandoos98Controller;
-            if (!Options.AutoAllocation.Wandoos.Value
-                || controller == null
-                || character.wandoos98 == null
-                || !character.settings.wandoos98On
-                || !character.wandoos98.installed)
+            if (!Options.AutoAllocation.Wandoos.Value)
                 return;
+            if (controller == null || character.wandoos98 == null)
+            {
+                Plugin.LogInfo("[wandoos-diag] skip: controller/wandoos98 null");
+                return;
+            }
+            if (!character.wandoos98.installed)
+            {
+                Plugin.LogInfo("[wandoos-diag] skip: not installed");
+                return;
+            }
+
+            if (!character.settings.wandoos98On)
+            {
+                character.settings.wandoos98On = true;
+                Plugin.LogInfo("[wandoos-diag] auto power-on (wandoos98On was false)");
+            }
+
+            var capEnergy = controller.capAmountEnergy();
+            var capMagic = controller.capAmountMagic();
+            var idleE = Math.Max(character.idleEnergy, 0L);
+            var idleM = character.magic == null ? 0L : Math.Max(character.magic.idleMagic, 0L);
+            // capAmount = (long)(base/speed) + 1; during MEH bootup vanilla's speed
+            // chain evaluates to NaN, and (long)NaN == long.MinValue - a garbage cap
+            // that makes every consumer bail (cap <= current) and nothing allocate.
+            // Any cap <= 0 is garbage (real caps are >= 1): treat as unbounded and
+            // inject the whole free pool instead.
+            var fillE = capEnergy <= 0L || capEnergy > character.totalCapEnergy();
+            var fillM = capMagic <= 0L || capMagic > character.totalCapMagic();
 
             var energy = TakeEnergy(
                 character,
                 character.wandoos98.wandoosEnergy,
-                controller.capAmountEnergy(),
-                true);
+                capEnergy,
+                fillE);
             if (energy > 0)
                 character.wandoos98.wandoosEnergy += energy;
 
             var magic = TakeMagic(
                 character,
                 character.wandoos98.wandoosMagic,
-                controller.capAmountMagic(),
-                true);
+                capMagic,
+                fillM);
             if (magic > 0)
                 character.wandoos98.wandoosMagic += magic;
+
+            Plugin.LogInfo($"[wandoos-diag] capE={capEnergy} idleE={idleE} takenE={energy} fillE={fillE} " +
+                           $"capM={capMagic} idleM={idleM} takenM={magic} fillM={fillM} " +
+                           $"haveE={character.wandoos98.wandoosEnergy} haveM={character.wandoos98.wandoosMagic}");
 
             if (energy > 0 || magic > 0)
                 controller.updateText();
@@ -687,7 +725,7 @@ namespace jshepler.ngu.mods
                 if (controller == null || skill == null || allNgu.reachedTarget(id))
                     continue;
 
-                var amount = TakeEnergy(character, skill.energy, allNgu.energyNGUCapAmount(id), false);
+                var amount = TakeEnergy(character, skill.energy, allNgu.energyNGUCapAmount(id));
                 if (amount <= 0)
                     continue;
 
@@ -703,7 +741,7 @@ namespace jshepler.ngu.mods
                 if (controller == null || skill == null || allNgu.reachedMagicTarget(id))
                     continue;
 
-                var amount = TakeMagic(character, skill.magic, allNgu.magicNGUCapAmount(id), false);
+                var amount = TakeMagic(character, skill.magic, allNgu.magicNGUCapAmount(id));
                 if (amount <= 0)
                     continue;
 
@@ -808,15 +846,36 @@ namespace jshepler.ngu.mods
             character.res3.idleRes3 -= taken;
             return taken;
         }
-
-        private static bool HacksBeforeWishes()
+        private static long TakeEnergy(Character character, long current, long cap, bool fillAll = false)
         {
-            var order = GetPriorityOrder();
-            var hacksIndex = Array.IndexOf(order, Feature.Hacks);
-            var wishesIndex = Array.IndexOf(order, Feature.Wishes);
-            return hacksIndex >= 0 && wishesIndex > hacksIndex;
-        }
+            if (character.idleEnergy <= 0L)
+                return 0L;
+            if (cap <= 0L)
+                fillAll = true; // garbage cap (NaN-cast): unbounded
 
+            if (cap <= current && !fillAll)
+                return 0L;
+
+            var needed = fillAll ? long.MaxValue : cap - Math.Max(current, 0L);
+            var taken = Math.Min(needed, Math.Max(character.idleEnergy, 0L));
+            character.idleEnergy -= taken;
+            return taken;
+        }
+        private static long TakeMagic(Character character, long current, long cap, bool fillAll = false)
+        {
+            if (character.magic == null || character.magic.idleMagic <= 0L)
+                return 0L;
+            if (cap <= 0L)
+                fillAll = true;
+
+            if (cap <= current && !fillAll)
+                return 0L;
+
+            var needed = fillAll ? long.MaxValue : cap - Math.Max(current, 0L);
+            var taken = Math.Min(needed, Math.Max(character.magic.idleMagic, 0L));
+            character.magic.idleMagic -= taken;
+            return taken;
+        }
         private static long CapFromDouble(double cap)
         {
             if (cap <= 0d || double.IsNaN(cap))
@@ -827,100 +886,14 @@ namespace jshepler.ngu.mods
             var result = (long)cap;
             return result < long.MaxValue ? result + 1L : long.MaxValue;
         }
-
-        private static long TakeEnergy(Character character, long current, long cap, bool fromNgu)
+        private static bool HacksBeforeWishes()
         {
-            if (cap <= current)
-                return 0L;
-
-            var needed = cap - Math.Max(current, 0L);
-            var taken = Math.Min(needed, Math.Max(character.idleEnergy, 0L));
-            character.idleEnergy -= taken;
-            needed -= taken;
-
-            if (fromNgu && needed > 0)
-                taken += ReleaseFromNguEnergy(character, needed);
-
-            return taken;
-        }
-        private static long TakeMagic(Character character, long current, long cap, bool fromNgu)
-        {
-            if (cap <= current || character.magic == null)
-                return 0L;
-
-            var needed = cap - Math.Max(current, 0L);
-            var taken = Math.Min(needed, Math.Max(character.magic.idleMagic, 0L));
-            character.magic.idleMagic -= taken;
-            needed -= taken;
-
-            if (fromNgu && needed > 0)
-                taken += ReleaseFromNguMagic(character, needed);
-
-            return taken;
+            var order = GetPriorityOrder();
+            var hacksIndex = Array.IndexOf(order, Feature.Hacks);
+            var wishesIndex = Array.IndexOf(order, Feature.Wishes);
+            return hacksIndex >= 0 && wishesIndex > hacksIndex;
         }
 
-        private static long ReleaseFromNguEnergy(Character character, long amount)
-        {
-            var nguController = character.NGUController;
-            if (nguController == null || character.NGU == null || nguController.NGU == null || character.NGU.skills == null)
-                return 0L;
 
-            var released = 0L;
-            var count = Math.Min(character.NGU.skills.Count, nguController.NGU.Length);
-            for (var pass = 0; pass < 2 && released < amount; pass++)
-            {
-                for (var id = 0; id < count && released < amount; id++)
-                {
-                    if (nguController.NGU[id] == null || (pass == 0 && nguController.reachedTarget(id)))
-                        continue;
-
-                    var skill = character.NGU.skills[id];
-                    if (skill == null)
-                        continue;
-
-                    var take = Math.Min(amount - released, Math.Max(skill.energy, 0L));
-                    if (take <= 0)
-                        continue;
-
-                    skill.energy -= take;
-                    released += take;
-                    nguController.NGU[id].refresh();
-                }
-            }
-
-            return released;
-        }
-
-        private static long ReleaseFromNguMagic(Character character, long amount)
-        {
-            var nguController = character.NGUController;
-            if (nguController == null || character.NGU == null || nguController.NGUMagic == null || character.NGU.magicSkills == null)
-                return 0L;
-
-            var released = 0L;
-            var count = Math.Min(character.NGU.magicSkills.Count, nguController.NGUMagic.Length);
-            for (var pass = 0; pass < 2 && released < amount; pass++)
-            {
-                for (var id = 0; id < count && released < amount; id++)
-                {
-                    if (nguController.NGUMagic[id] == null || (pass == 0 && nguController.reachedMagicTarget(id)))
-                        continue;
-
-                    var skill = character.NGU.magicSkills[id];
-                    if (skill == null)
-                        continue;
-
-                    var take = Math.Min(amount - released, Math.Max(skill.magic, 0L));
-                    if (take <= 0)
-                        continue;
-
-                    skill.magic -= take;
-                    released += take;
-                    nguController.NGUMagic[id].refresh();
-                }
-            }
-
-            return released;
-        }
     }
 }

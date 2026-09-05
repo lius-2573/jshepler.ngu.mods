@@ -25,6 +25,7 @@ namespace jshepler.ngu.mods
             MoneyPit.AutoToss = Config.Bind("MoneyPit", "AutoToss", true, "automatically toss gold into the money pit as soon as it's ready");
             DailySpin.AutoSpin = Config.Bind("DailySpin", "AutoSpin", true, "automatically spin the daily wheel as soon as it's ready");
             BloodMagic.AutoCast = Config.Bind("BloodMagic", "AutoCast", true, "automatically cast Iron Pill as soon as it's ready (gold/loot/rebirth spells have their own vanilla auto-cast checkboxes, which this leaves untouched)");
+            Cooking.AutoEat = Config.Bind("Cooking", "AutoEat", true, "automatically set the optimal ingredient levels and eat the meal as soon as it's ready");
             GoldDiggers.AutoLoadSaved = Config.Bind("GoldDiggers", "AutoLoadSaved", true, "automatically apply the saved digger loadout after loading a save and after rebirth");
             Performance.FrameCheckInterval = Config.Bind("Performance", "FrameCheckInterval", 60, "number of rendered frames between checks for frame-based automation");
             Performance.WishCheckIntervalSeconds = Config.Bind("Performance", "WishCheckIntervalSeconds", 1f, "seconds between AutoWishes checks");
@@ -100,6 +101,10 @@ namespace jshepler.ngu.mods
         internal static class BloodMagic
         {
             internal static ConfigEntry<bool> AutoCast;
+        }
+        internal static class Cooking
+        {
+            internal static ConfigEntry<bool> AutoEat;
         }
         internal static class Performance
         {

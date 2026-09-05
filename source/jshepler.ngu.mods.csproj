@@ -36,6 +36,7 @@
         <Compile Include="AutoLoadSavedDiggers.cs" />
         <Compile Include="AutoWishes.cs" />
         <Compile Include="AutomationThrottle.cs" />
+        <Compile Include="CookingHelper.cs" />
         <Compile Include="GameData\Fruits.cs" />
         <Compile Include="GameData\Quests.cs" />
         <Compile Include="ModSave\Data.cs" />
